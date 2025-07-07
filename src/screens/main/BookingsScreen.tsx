@@ -1,0 +1,258 @@
+import React, { useEffect, useCallback, useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import Header from "../../components/common/Header";
+import Card from "../../components/common/Card";
+import Button from "../../components/common/Button";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { format } from "date-fns";
+import { useBookings } from "../../contexts/BookingsContext";
+import { HomeScreenNavigationProp } from "./HomeScreen";
+
+const BookingsScreen: React.FC = () => {
+  const navigation = useNavigation<HomeScreenNavigationProp>();
+  const { fetchBookings, bookings, bookingsLoading, bookingsError } =
+    useBookings();
+  const [selectedTab, setSelectedTab] = useState<"upcoming" | "past">(
+    "upcoming"
+  );
+
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
+
+  const upcomingBookings = bookings.filter(
+    (booking) =>
+      new Date(booking.event.date) >= new Date() &&
+      booking.status === "confirmed"
+  );
+
+  const pastBookings = bookings.filter(
+    (booking) =>
+      new Date(booking.event.date) < new Date() ||
+      booking.status === "cancelled"
+  );
+
+  const handleBookingPress = useCallback(
+    (booking: any) => {
+      navigation.navigate("EventDetails", { eventId: booking.eventId });
+    },
+    [navigation]
+  );
+
+  const handleCancelBooking = useCallback((bookingId: string) => {
+    Alert.alert(
+      "Cancel Booking",
+      "Are you sure you want to cancel this booking?",
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: "Yes",
+          style: "destructive",
+          onPress: () => {
+            // Implement cancellation logic
+            console.log("Cancelling booking:", bookingId);
+          },
+        },
+      ]
+    );
+  }, []);
+
+  const BookingCard = ({ booking }: { booking: any }) => (
+    <Card style={{ marginBottom: 16 }}>
+      <TouchableOpacity onPress={() => handleBookingPress(booking)}>
+        <View className="flex-row">
+          <View className="w-20 h-20 bg-gray-200 rounded-lg mr-4" />
+          <View className="flex-1">
+            <Text className="font-bold text-lg text-gray-900" numberOfLines={2}>
+              {booking.event.title}
+            </Text>
+            <View className="flex-row items-center mt-1">
+              <Ionicons name="calendar-outline" size={14} color="#6b7280" />
+              <Text className="text-gray-500 text-sm ml-1">
+                {format(booking.event.date, "MMM dd, yyyy")} •{" "}
+                {booking.event.time}
+              </Text>
+            </View>
+            <View className="flex-row items-center mt-1">
+              <Ionicons name="location-outline" size={14} color="#6b7280" />
+              <Text className="text-gray-500 text-sm ml-1">
+                {booking.event.venue.name}
+              </Text>
+            </View>
+            <View className="flex-row items-center justify-between mt-3">
+              <View>
+                <Text className="text-xs text-gray-400">Booking ID</Text>
+                <Text className="text-sm font-medium">#{booking.id}</Text>
+              </View>
+              <View className="items-end">
+                <Text className="text-xs text-gray-400">Total</Text>
+                <Text className="text-lg font-bold text-gray-900">
+                  ₹{booking.totalAmount.toLocaleString()}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <View className="flex-row justify-between items-center mt-4 pt-4 border-t border-gray-100">
+          <View
+            className={`px-3 py-1 rounded-full ${
+              booking.status === "confirmed" ? "bg-green-100" : "bg-red-100"
+            }`}
+          >
+            <Text
+              className={`text-xs font-medium ${
+                booking.status === "confirmed"
+                  ? "text-green-700"
+                  : "text-red-700"
+              }`}
+            >
+              {booking.status.toUpperCase()}
+            </Text>
+          </View>
+
+          <View className="flex-row space-x-2">
+            <Button
+              title="View Ticket"
+              onPress={() => {}}
+              variant="outline"
+              size="sm"
+            />
+            {selectedTab === "upcoming" && (
+              <Button
+                title="Cancel"
+                onPress={() => handleCancelBooking(booking.id)}
+                variant="ghost"
+                size="sm"
+              />
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Card>
+  );
+
+  const EmptyState = ({ type }: { type: "upcoming" | "past" }) => (
+    <View className="flex-1 justify-center items-center py-20">
+      <Ionicons
+        name={type === "upcoming" ? "calendar-outline" : "time-outline"}
+        size={64}
+        color="#d1d5db"
+      />
+      <Text className="text-lg font-medium text-gray-600 mt-4 mb-2">
+        No {type} bookings
+      </Text>
+      <Text className="text-gray-400 text-center px-8">
+        {type === "upcoming"
+          ? "Book your first event to see it here"
+          : "Your past bookings will appear here"}
+      </Text>
+      {type === "upcoming" && (
+        <Button
+          title="Explore Events"
+          onPress={() => navigation.navigate("Home")}
+          gradient
+          size="lg"
+          style={{ marginTop: 20 }}
+        />
+      )}
+    </View>
+  );
+
+  if (bookingsLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <Header title="My Bookings" />
+        <LoadingSpinner text="Loading bookings..." />
+      </SafeAreaView>
+    );
+  }
+
+  if (bookingsError) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <Header title="My Bookings" />
+        <View className="flex-1 justify-center items-center px-6">
+          <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
+          <Text className="text-xl font-bold text-gray-900 mt-4 text-center">
+            Failed to load bookings
+          </Text>
+          <Text className="text-gray-600 text-center mt-2">
+            {bookingsError}
+          </Text>
+          <Button
+            title="Retry"
+            onPress={fetchBookings}
+            gradient
+            style={{ marginTop: 20 }}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView className="flex-1 bg-background">
+      <Header title="My Bookings" />
+
+      <View className="px-5 py-4">
+        <View className="flex-row bg-gray-100 rounded-xl p-1">
+          <TouchableOpacity
+            onPress={() => setSelectedTab("upcoming")}
+            className={`flex-1 py-3 rounded-lg ${
+              selectedTab === "upcoming" ? "bg-white shadow-sm" : ""
+            }`}
+          >
+            <Text
+              className={`text-center font-semibold ${
+                selectedTab === "upcoming"
+                  ? "text-primary-500"
+                  : "text-gray-500"
+              }`}
+            >
+              Upcoming ({upcomingBookings.length})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setSelectedTab("past")}
+            className={`flex-1 py-3 rounded-lg ${
+              selectedTab === "past" ? "bg-white shadow-sm" : ""
+            }`}
+          >
+            <Text
+              className={`text-center font-semibold ${
+                selectedTab === "past" ? "text-primary-500" : "text-gray-500"
+              }`}
+            >
+              Past ({pastBookings.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
+        {selectedTab === "upcoming" ? (
+          upcomingBookings.length > 0 ? (
+            upcomingBookings.map((booking) => (
+              <BookingCard key={booking.id} booking={booking} />
+            ))
+          ) : (
+            <EmptyState type="upcoming" />
+          )
+        ) : pastBookings.length > 0 ? (
+          pastBookings.map((booking) => (
+            <BookingCard key={booking.id} booking={booking} />
+          ))
+        ) : (
+          <EmptyState type="past" />
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+export default React.memo(BookingsScreen);
