@@ -38,7 +38,7 @@ export default function SearchBar({
   return (
     <View style={style} className="flex-row items-center space-x-3">
       {/* Search Input Container */}
-      <View className="flex-1 flex-row items-center bg-gray-100 rounded-xl px-4 py-3">
+      <View className="flex-1 flex-row items-center bg-white rounded-xl px-4 py-2 mt-4">
         <Ionicons name="search" size={20} color="#6b7280" className="mr-3" />
 
         <TextInput
@@ -65,7 +65,7 @@ export default function SearchBar({
       {showFilter && (
         <TouchableOpacity
           onPress={onFilter}
-          className="bg-primary-500 rounded-xl p-3"
+          className="bg-primary-500 rounded-xl p-3 ml-2 mt-4"
         >
           <Ionicons name="options" size={20} color="#ffffff" />
         </TouchableOpacity>

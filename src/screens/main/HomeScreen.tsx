@@ -242,6 +242,7 @@ const HomeScreen: React.FC = () => {
               isLiked={isEventLiked}
               variant="featured"
               horizontal
+              style={{}}
               showsHorizontalScrollIndicator={false}
             />
           </View>

@@ -11,14 +11,18 @@ import { Event, MainStackParamList } from "../../types";
 import { format } from "date-fns";
 import { useAuth } from "../../contexts/AuthContext";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack/lib/typescript/src/types";
+import { useEvents } from "../../hooks/useEvents";
 
 type BookingScreenNavigationProp =
   NativeStackNavigationProp<MainStackParamList>;
 const BookingScreen: React.FC = () => {
   const navigation = useNavigation<BookingScreenNavigationProp>();
   const route = useRoute();
-  const { event } = route.params as { event: Event };
+  const { eventId } = route.params as { eventId: string };
+  const { getEventById } = useEvents();
   const { user } = useAuth();
+
+  const event = getEventById(eventId);
 
   const [quantity, setQuantity] = useState(1);
   const [selectedTicketType, setSelectedTicketType] = useState("general");
@@ -27,6 +31,14 @@ const BookingScreen: React.FC = () => {
     email: user?.email || "",
     phone: user?.phone || "",
   });
+
+  if (!event) {
+    return (
+      <SafeAreaView className="flex-1 bg-background items-center justify-center">
+        <Text className="text-lg text-gray-700">Event not found.</Text>
+      </SafeAreaView>
+    );
+  }
 
   const ticketTypes = [
     {

@@ -18,7 +18,7 @@ interface EventCardProps {
   event: Event;
   onPress: (event: Event) => void;
   onLike?: (eventId: string) => void;
-  style?: ViewStyle;
+  style?: ViewStyle; // This style prop carries the crucial width and margins
   variant?: "default" | "featured" | "compact";
   isLiked?: boolean;
 }
@@ -29,9 +29,10 @@ const EventCard = memo<EventCardProps>(
       onPress(event);
     }, [event, onPress]);
 
+    // Added type for e: GestureResponderEvent to ensure stopPropagation works correctly
     const handleLike = useCallback(
-      (e: any) => {
-        e.stopPropagation();
+      (e: import("react-native").GestureResponderEvent) => {
+        e.stopPropagation(); // Prevents onPress on the card itself
         onLike?.(event.id);
       },
       [event.id, onLike]
@@ -65,6 +66,7 @@ const EventCard = memo<EventCardProps>(
     const { color: availabilityColor, text: availabilityText } =
       getAvailabilityInfo();
 
+    // Minor simplification: Combine className and style directly if possible
     const LikeButton = memo(() => (
       <Pressable
         onPress={handleLike}
@@ -92,9 +94,7 @@ const EventCard = memo<EventCardProps>(
             className={`font-bold ${
               variant === "featured"
                 ? "text-white text-lg"
-                : variant === "compact"
-                ? "text-primary-500"
-                : "text-primary-500 text-lg"
+                : "text-primary-500 text-lg" // Simplified: compact and default use the same color
             }`}
           >
             Free
@@ -104,9 +104,7 @@ const EventCard = memo<EventCardProps>(
             className={`font-bold ${
               variant === "featured"
                 ? "text-white text-lg"
-                : variant === "compact"
-                ? "text-gray-900"
-                : "text-gray-900 text-lg"
+                : "text-gray-900 text-lg" // Simplified: compact and default use the same color
             }`}
           >
             ₹{event.price.min.toLocaleString()}
@@ -145,11 +143,14 @@ const EventCard = memo<EventCardProps>(
       </View>
     ));
 
+    // --- VARIANT RENDERING ---
     if (variant === "featured") {
       return (
         <Pressable
           onPress={handlePress}
-          style={[style, { marginBottom: 24 }]}
+          // Apply the style prop directly here.
+          // Any width/margin from EventList will apply correctly.
+          style={[style]} // Removed fixed marginBottom as EventList now handles it
           android_ripple={{ color: "rgba(255,255,255,0.1)" }}
         >
           <View className="h-80 rounded-3xl overflow-hidden">
@@ -236,8 +237,9 @@ const EventCard = memo<EventCardProps>(
       return (
         <Pressable
           onPress={handlePress}
-          style={style}
-          className="flex-row bg-white rounded-xl p-4 mb-3"
+          // Apply the style prop here.
+          style={[style]} // Removed fixed mb-3 from className
+          className="flex-row bg-white rounded-xl p-4" // Removed mb-3
           android_ripple={{ color: "rgba(14, 165, 233, 0.1)" }}
         >
           <View className="w-20 h-20 rounded-xl overflow-hidden mr-4">
@@ -283,8 +285,9 @@ const EventCard = memo<EventCardProps>(
     return (
       <Pressable
         onPress={handlePress}
-        style={style}
-        className="bg-white rounded-2xl overflow-hidden mb-4"
+        // Apply the style prop directly here.
+        style={[style]} // Removed fixed mb-4 from className
+        className="bg-white rounded-2xl overflow-hidden mb-4" // Removed mb-4
         android_ripple={{ color: "rgba(14, 165, 233, 0.1)" }}
       >
         <View

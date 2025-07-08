@@ -38,7 +38,7 @@ const EventDetailsScreen: React.FC = () => {
 
   const handleBookNow = useCallback(() => {
     if (event) {
-      navigation.navigate("Booking", { event });
+      navigation.navigate("Booking", { eventId: eventId });
     }
   }, [navigation, event]);
 
@@ -82,15 +82,15 @@ const EventDetailsScreen: React.FC = () => {
               <View className="flex-row justify-between items-center px-5 pt-4">
                 <TouchableOpacity
                   onPress={handleBack}
-                  className="bg-white/90 rounded-full p-2"
+                  className="bg-gray-100 rounded-full p-2 hover:opacity-80"
                 >
                   <Ionicons name="chevron-back" size={24} color="#1f2937" />
                 </TouchableOpacity>
 
-                <View className="flex-row space-x-2">
+                <View className="flex-row space-x-14">
                   <TouchableOpacity
                     onPress={() => toggleLikeEvent(event.id)}
-                    className="bg-white/90 rounded-full p-2"
+                    className="bg-gray-100 rounded-full p-2 mr-2 hover:opacity-90"
                   >
                     <Ionicons
                       name={isEventLiked(event.id) ? "heart" : "heart-outline"}
@@ -101,7 +101,7 @@ const EventDetailsScreen: React.FC = () => {
 
                   <TouchableOpacity
                     onPress={handleShare}
-                    className="bg-white/90 rounded-full p-2"
+                    className="bg-gray-100 rounded-full p-2 hover:opacity-90 ml-1"
                   >
                     <Ionicons name="share-outline" size={24} color="#1f2937" />
                   </TouchableOpacity>
@@ -172,9 +172,9 @@ const EventDetailsScreen: React.FC = () => {
 
           {/* Event Info Cards */}
           <View className="space-y-4 mb-6">
-            <Card>
+            <Card className="mb-3">
               <View className="flex-row items-center">
-                <Ionicons name="calendar" size={24} color="#0ea5e9" />
+                <Ionicons name="calendar" size={28} color="#0ea5e9" />
                 <View className="ml-4">
                   <Text className="text-gray-500 text-sm">Date & Time</Text>
                   <Text className="text-gray-900 font-semibold">
@@ -185,9 +185,9 @@ const EventDetailsScreen: React.FC = () => {
               </View>
             </Card>
 
-            <Card>
-              <View className="flex-row items-start">
-                <Ionicons name="location" size={24} color="#f37316" />
+            <Card className="mb-3">
+              <View className="flex-row items-center">
+                <Ionicons name="location" size={28} color="#f37316" />
                 <View className="ml-4 flex-1">
                   <Text className="text-gray-500 text-sm">Location</Text>
                   <Text className="text-gray-900 font-semibold">
@@ -199,18 +199,18 @@ const EventDetailsScreen: React.FC = () => {
                 </View>
                 <TouchableOpacity
                   onPress={handleGetDirections}
-                  className="bg-accent-100 px-3 py-1 rounded-lg"
+                  className="bg-accent-100 px-3 py-1 rounded-lg justify-self-start"
                 >
                   <Text className="text-accent-700 text-sm font-medium">
-                    Directions
+                    Get Directions
                   </Text>
                 </TouchableOpacity>
               </View>
             </Card>
 
-            <Card>
+            <Card className="mb-8 ">
               <View className="flex-row items-center">
-                <Ionicons name="people" size={24} color="#10b981" />
+                <Ionicons name="people" size={28} color="#10b981" />
                 <View className="ml-4">
                   <Text className="text-gray-500 text-sm">Organizer</Text>
                   <Text className="text-gray-900 font-semibold">
@@ -270,28 +270,28 @@ const EventDetailsScreen: React.FC = () => {
             </View>
           </Card>
         </View>
+        <View className="bg-white border-t border-gray-100 px-5 py-4">
+          <View className="flex-row items-center justify-between ml-2">
+            <View>
+              <Text className="text-gray-500 text-sm">Starting from</Text>
+              <Text className="text-xl font-bold text-gray-900">
+                {event.isFree ? "Free" : `₹${event.price.min.toLocaleString()}`}
+              </Text>
+            </View>
+
+            <Button
+              title="Book Now"
+              onPress={handleBookNow}
+              gradient
+              size="lg"
+              style={{ flex: 1, marginLeft: 20 }}
+              disabled={event.capacity - event.bookedCount === 0}
+            />
+          </View>
+        </View>
       </ScrollView>
 
       {/* Bottom Action Bar */}
-      <View className="bg-white border-t border-gray-100 px-5 py-4">
-        <View className="flex-row items-center justify-between">
-          <View>
-            <Text className="text-gray-500 text-sm">Starting from</Text>
-            <Text className="text-xl font-bold text-gray-900">
-              {event.isFree ? "Free" : `₹${event.price.min.toLocaleString()}`}
-            </Text>
-          </View>
-
-          <Button
-            title="Book Now"
-            onPress={handleBookNow}
-            gradient
-            size="lg"
-            style={{ flex: 1, marginLeft: 16 }}
-            disabled={event.capacity - event.bookedCount === 0}
-          />
-        </View>
-      </View>
     </SafeAreaView>
   );
 };

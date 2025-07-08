@@ -90,7 +90,7 @@ export interface Ticket {
 export type MainStackParamList = {
   MainTabs: undefined;
   EventDetails: { eventId: string };
-  Booking: { event: Event };
+  Booking: { eventId: string };
   Payment: { booking: Partial<Booking> };
   Success: { bookingId: string };
 };

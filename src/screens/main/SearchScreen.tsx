@@ -1,8 +1,11 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import {
+  CompositeNavigationProp,
+  useNavigation,
+} from "@react-navigation/native";
 import { useEvents } from "../../hooks/useEvents";
 import { categories, cities } from "../../data/mockData";
 import EventList from "../../components/events/EventList";
@@ -11,10 +14,16 @@ import Header from "../../components/common/Header";
 import Button from "../../components/common/Button";
 import Modal from "react-native-modal";
 import { useFilters } from "../../contexts/FiltersContext";
-import { HomeScreenNavigationProp } from "./HomeScreen";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { MainTabParamList, MainStackParamList, Event } from "../../types";
+type SearchScreenNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<MainTabParamList, "Search">,
+  NativeStackNavigationProp<MainStackParamList>
+>;
 
 const SearchScreen: React.FC = () => {
-  const navigation = useNavigation<HomeScreenNavigationProp>();
+  const navigation = useNavigation<SearchScreenNavigationProp>();
   const {
     searchQuery,
     selectedCategory,
@@ -26,6 +35,7 @@ const SearchScreen: React.FC = () => {
   } = useFilters();
   const { events, isEventLiked, toggleLikeEvent } = useEvents();
   const [showFilters, setShowFilters] = useState(false);
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
 
   const handleEventPress = useCallback(
     (event: any) => {
@@ -50,6 +60,26 @@ const SearchScreen: React.FC = () => {
     },
     [setCategory, setCity]
   );
+
+  useEffect(() => {
+    const fEvents = events.filter((event) => {
+      if (
+        event.venue.city
+          .toLowerCase()
+          .includes(selectedCity ? selectedCity.toLowerCase() : "") ||
+        event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.category
+          .toLowerCase()
+          .includes(selectedCategory ? selectedCategory.toLowerCase() : "") ||
+        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.venue.name.toLowerCase().includes(searchQuery.toLowerCase())
+      ) {
+        return event;
+      }
+    });
+
+    setFilteredEvents(fEvents);
+  }, [selectedCategory, selectedCity, searchQuery]);
 
   const FilterModal = () => (
     <Modal
@@ -170,7 +200,12 @@ const SearchScreen: React.FC = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <Header title="Search Events" showBack onLeftPress={handleBack} />
+      {/* <Header
+        style={{ height: 60 }}
+        title="Search Events"
+        showBack
+        onLeftPress={handleBack}
+      /> */}
 
       <View className="px-5 pb-4">
         <SearchBar
@@ -215,14 +250,14 @@ const SearchScreen: React.FC = () => {
       )}
 
       <EventList
-        events={events}
+        events={filteredEvents}
+        numColumns={2}
         onEventPress={handleEventPress}
         onLike={toggleLikeEvent}
+        style={{ paddingHorizontal: 0, marginBottom: 0 }}
         isLiked={isEventLiked}
-        style={{ flex: 1, paddingHorizontal: 20 }}
         emptyMessage="No events found matching your search"
       />
-
       <FilterModal />
     </SafeAreaView>
   );

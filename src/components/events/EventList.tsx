@@ -6,10 +6,13 @@ import {
   RefreshControl,
   ViewStyle,
   ListRenderItem,
+  Dimensions, // Import Dimensions for dynamic width calculation
 } from "react-native";
 import { Event } from "../../types";
-import EventCard from "./EventCard";
+import EventCard from "./EventCard"; // Make sure EventCard can adapt its width
 import LoadingSpinner from "../common/LoadingSpinner";
+
+const { width: screenWidth } = Dimensions.get("window");
 
 interface EventListProps {
   events: Event[];
@@ -24,8 +27,12 @@ interface EventListProps {
   variant?: "default" | "featured" | "compact";
   horizontal?: boolean;
   showsHorizontalScrollIndicator?: boolean;
-  numColumns?: number;
+  numColumns?: number; // Can be 1, 2, 3, etc.
   emptyMessage?: string;
+  // New prop for horizontal spacing between grid items
+  itemHorizontalSpacing?: number;
+  // New prop for vertical spacing between grid items
+  itemVerticalSpacing?: number;
 }
 
 const EventList = memo<EventListProps>(
@@ -42,21 +49,73 @@ const EventList = memo<EventListProps>(
     variant = "default",
     horizontal = false,
     showsHorizontalScrollIndicator = false,
-    numColumns = 1,
+    numColumns = 1, // Default to 1
     emptyMessage = "No events found",
+    itemHorizontalSpacing = 16, // Default spacing between columns
+    itemVerticalSpacing = 16, // Default spacing between rows
   }) => {
+    // Determine the effective number of columns
+    const effectiveNumColumns = horizontal ? 1 : numColumns;
+
+    // Calculate item width for grid columns
+    const calculateGridItemWidth = useCallback(() => {
+      if (horizontal) {
+        // For horizontal lists, fixed width based on variant makes sense
+        return variant === "featured" ? 280 : 200;
+      }
+
+      // For vertical grid:
+      // screenWidth is the total width available
+      // We subtract padding for the FlatList itself (e.g., if you have global screen padding)
+      // and total spacing between columns.
+      // Example: For 2 columns, there's 1 `itemHorizontalSpacing` in between items.
+      // For 3 columns, there are 2 `itemHorizontalSpacing` in between items.
+      // General formula: (numColumns - 1) * itemHorizontalSpacing
+
+      const containerPadding = 20; // Assuming global screen padding or padding you want around the grid
+      const totalSpacing = (effectiveNumColumns - 1) * itemHorizontalSpacing;
+      const availableWidth = screenWidth - 2 * containerPadding - totalSpacing;
+      return availableWidth / effectiveNumColumns;
+    }, [horizontal, variant, effectiveNumColumns, itemHorizontalSpacing]);
+
     const renderEventCard: ListRenderItem<Event> = useCallback(
-      ({ item }) => (
-        <EventCard
-          event={item}
-          onPress={onEventPress}
-          onLike={onLike}
-          isLiked={isLiked?.(item.id)}
-          variant={variant}
-          style={horizontal ? { marginRight: 16 } : undefined}
-        />
-      ),
-      [variant, horizontal, onEventPress, onLike, isLiked]
+      ({ item, index }) => {
+        const itemWidth = calculateGridItemWidth();
+
+        // Adjust margin for grid items to avoid right/bottom margin on last items
+        const isLastColumn = (index + 1) % effectiveNumColumns === 0;
+        const isLastRow =
+          Math.ceil((index + 1) / effectiveNumColumns) ===
+          Math.ceil(events.length / effectiveNumColumns);
+
+        return (
+          <EventCard
+            event={item}
+            onPress={onEventPress}
+            onLike={onLike}
+            isLiked={isLiked?.(item.id)}
+            variant={variant}
+            style={{
+              width: horizontal ? itemWidth : itemWidth, // Explicitly set width for grid
+              marginBottom: isLastRow ? 0 : itemVerticalSpacing,
+              marginRight:
+                horizontal || isLastColumn ? 0 : itemHorizontalSpacing,
+            }}
+          />
+        );
+      },
+      [
+        events.length, // Add events.length to dependencies for last row calculation
+        variant,
+        horizontal,
+        onEventPress,
+        onLike,
+        isLiked,
+        calculateGridItemWidth,
+        effectiveNumColumns,
+        itemVerticalSpacing,
+        itemHorizontalSpacing,
+      ]
     );
 
     const renderEmptyState = useCallback(() => {
@@ -92,32 +151,34 @@ const EventList = memo<EventListProps>(
 
     const keyExtractor = useCallback((item: Event) => item.id, []);
 
-    const getItemLayout = useCallback(
-      (data: ArrayLike<Event> | null | undefined, index: number) => {
-        if (horizontal) {
-          const itemWidth = variant === "featured" ? 280 : 200;
-          return { length: itemWidth, offset: itemWidth * index, index };
-        }
-        return { length: 200, offset: 200 * index, index }; // Approximate height
-      },
-      [horizontal, variant]
-    );
+    // columnWrapperStyle for grid layout
+    const columnWrapperStyle =
+      effectiveNumColumns > 1
+        ? {
+            justifyContent: "space-between" as "space-between",
+            marginBottom: itemVerticalSpacing,
+          }
+        : undefined;
 
     return (
       <FlatList
         data={events}
         renderItem={renderEventCard}
         keyExtractor={keyExtractor}
-        getItemLayout={horizontal ? getItemLayout : undefined}
+        // getItemLayout removed for simplicity, less critical for basic grids
         style={style}
         horizontal={horizontal}
         showsHorizontalScrollIndicator={showsHorizontalScrollIndicator}
         showsVerticalScrollIndicator={!horizontal}
-        numColumns={horizontal ? 1 : numColumns}
+        numColumns={effectiveNumColumns} // Use the effective number of columns
         contentContainerStyle={{
-          paddingHorizontal: horizontal ? 20 : 0,
-          paddingBottom: horizontal ? 0 : 20,
+          // Apply horizontal padding here for the FlatList itself
+          paddingHorizontal: 20, // Example padding for the entire grid
+          paddingBottom: 20,
+          // Add flexGrow: 1 and justifyContent: 'center' for ListEmptyComponent to center correctly
+          flexGrow: 1,
         }}
+        columnWrapperStyle={columnWrapperStyle} // Apply the column wrapper style here
         refreshControl={
           onRefresh ? (
             <RefreshControl
@@ -132,19 +193,13 @@ const EventList = memo<EventListProps>(
         onEndReachedThreshold={0.5}
         ListEmptyComponent={renderEmptyState}
         ListFooterComponent={renderFooter}
-        removeClippedSubviews={true}
+        removeClippedSubviews={true} // Good for performance
         maxToRenderPerBatch={10}
         updateCellsBatchingPeriod={50}
         initialNumToRender={10}
         windowSize={10}
-        maintainVisibleContentPosition={
-          horizontal
-            ? {
-                minIndexForVisible: 0,
-                autoscrollToTopThreshold: 100,
-              }
-            : undefined
-        }
+        // maintainVisibleContentPosition generally not needed for vertical grids unless specific case
+        maintainVisibleContentPosition={undefined}
       />
     );
   }
