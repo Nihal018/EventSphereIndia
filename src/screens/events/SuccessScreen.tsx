@@ -14,91 +14,105 @@ import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import { format } from "date-fns";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-// Ensure all necessary types are imported from your types file
 import {
   MainStackParamList,
   MainTabParamList,
   Event,
   Booking,
-} from "../../types"; // No need for BookingsStackParamList if it's not a nested stack
+} from "../../types";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { useEvents } from "../../hooks/useEvents";
 
-// Define the Navigation Prop type for SuccessScreen
-// It can navigate within its parent stack (MainStackParamList)
-// and also to other tabs within the MainTabParamList (via the 'MainTabs' screen)
 type SuccessScreenNavigationProp = CompositeNavigationProp<
-  NativeStackNavigationProp<MainStackParamList, "Success">, // Current screen's direct navigator
-  BottomTabNavigationProp<MainTabParamList> // To navigate to other tabs
+  NativeStackNavigationProp<MainStackParamList, "Success">,
+  BottomTabNavigationProp<MainTabParamList>
 >;
 
-// Define the Route Prop type for SuccessScreen to access its parameters
 type SuccessScreenRouteProp = RouteProp<MainStackParamList, "Success">;
 
 const SuccessScreen: React.FC = () => {
   const navigation = useNavigation<SuccessScreenNavigationProp>();
-  const route = useRoute<SuccessScreenRouteProp>(); // Use the specific route prop type
-  // Ensure route.params matches the type defined in MainStackParamList for 'Success'
-  const { bookingId, event, amount } = route.params as {
+  const route = useRoute<SuccessScreenRouteProp>();
+  const { bookingId, eventId, amount } = route.params as {
     bookingId: string;
-    event: any;
+    eventId: string;
     amount: number;
   };
 
-  useEffect(() => {
-    // Trigger haptic feedback on component mount for success
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  }, []); // Empty dependency array ensures this runs only once
+  const { getEventById } = useEvents();
+  const event: Event | undefined = getEventById(eventId);
 
-  // Callback to handle navigation to the Bookings tab
+  useEffect(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, []);
+
   const handleViewBookings = useCallback(() => {
-    // Navigate to the 'MainTabs' screen (which is your BottomTabNavigator within MainNavigator)
-    // Then, specify the 'Bookings' screen within that tab navigator.
     navigation.navigate("MainTabs", { screen: "Bookings" });
   }, [navigation]);
 
-  // Callback to handle navigation back to the Home tab
   const handleGoHome = useCallback(() => {
-    // Navigate to the 'MainTabs' screen and then specifically to the 'Home' tab
     navigation.navigate("MainTabs");
   }, [navigation]);
 
-  // Placeholder for download ticket logic
   const handleDownloadTicket = useCallback(() => {
     console.log("Download ticket for booking ID:", bookingId);
-    // Implement actual ticket download logic here (e.g., open URL, share file)
   }, [bookingId]);
 
-  // Placeholder for share booking logic
   const handleShare = useCallback(() => {
     console.log("Share booking ID:", bookingId);
-    // Implement actual sharing functionality here (e.g., using Share API)
   }, [bookingId]);
 
-  // Format event date and time for display
-  // Ensure event.date is a valid date string/object before formatting
-  const formattedDate = event?.date
-    ? format(new Date(event.date), "EEEE, MMMM dd,yyyy")
-    : "N/A";
-  // Assuming event.time is a string like "HH:MM"
-  const formattedTime = event?.time
-    ? format(new Date(`2000-01-01T${event.time}`), "hh:mm a")
-    : "N/A";
+  // Fixed date and time formatting
+  const formatEventDate = (date: Date | string | undefined): string => {
+    if (!date) return "N/A";
+    try {
+      const dateObj = typeof date === "string" ? new Date(date) : date;
+      if (isNaN(dateObj.getTime())) return "N/A";
+      return format(dateObj, "EEEE, MMMM dd, yyyy");
+    } catch (error) {
+      console.error("Date formatting error:", error);
+      return "N/A";
+    }
+  };
+
+  const formatEventTime = (time: string | undefined): string => {
+    if (!time) return "N/A";
+    try {
+      // Handle different time formats
+      if (time.includes(":")) {
+        // If time is already in HH:MM format, just return it
+        return time;
+      }
+      // If time needs to be converted to 12-hour format
+      const [hours, minutes] = time.split(":");
+      const hour = parseInt(hours, 10);
+      const ampm = hour >= 12 ? "PM" : "AM";
+      const displayHour = hour % 12 || 12;
+      return `${displayHour}:${minutes} ${ampm}`;
+    } catch (error) {
+      console.error("Time formatting error:", error);
+      return time; // Return original time if formatting fails
+    }
+  };
+
+  const formattedDate = formatEventDate(event?.date);
+  const formattedTime = formatEventTime(event?.time);
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fafafa" }}>
       <ScrollView
-        className="flex-1"
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          flexGrow: 1,
           paddingHorizontal: 20,
           paddingVertical: 24,
-        }} // Added padding for better layout
+          paddingBottom: 50, // Extra padding for bottom action bar
+        }}
       >
         {/* Success Header */}
         <View className="items-center mb-8">
           <LinearGradient
-            colors={["#10b981", "#059669"]} // Green gradient for success
+            colors={["#10b981", "#059669"]}
             className="w-24 h-24 rounded-full items-center justify-center mb-6"
           >
             <Ionicons name="checkmark" size={48} color="white" />
@@ -125,36 +139,38 @@ const SuccessScreen: React.FC = () => {
 
           <View className="border-t border-gray-100 pt-4">
             <Text className="font-bold text-lg text-gray-900 mb-3">
-              {event?.title || "N/A"}
+              {event?.title || "Event Title"}
             </Text>
-          </View>
-          <View className="space-y-3">
-            <View className="flex-row items-center">
-              <Ionicons name="calendar-outline" size={18} color="#6b7280" />
-              <Text className="text-gray-600 ml-3">
-                {formattedDate} at {formattedTime}
-              </Text>
-            </View>
 
-            <View className="flex-row items-center">
-              <Ionicons name="location-outline" size={18} color="#6b7280" />
-              <Text className="text-gray-600 ml-3">
-                {event?.venue?.name || "N/A"}, {event?.venue?.city || "N/A"}
-              </Text>
-            </View>
+            <View className="space-y-7">
+              <View className="flex-row items-center">
+                <Ionicons name="calendar-outline" size={18} color="#6b7280" />
+                <Text className="text-gray-600 ml-3 text-lg">
+                  {formattedDate} at {formattedTime}
+                </Text>
+              </View>
 
-            <View className="flex-row items-center">
-              <Ionicons name="card-outline" size={18} color="#6b7280" />
-              <Text className="text-gray-600 ml-3">
-                Amount Paid: ₹{amount?.toLocaleString() || "0.00"}
-              </Text>
+              <View className="flex-row items-center">
+                <Ionicons name="location-outline" size={18} color="#6b7280" />
+                <Text className="text-gray-600 ml-3 text-lg">
+                  {event?.venue?.name || "Venue"},{" "}
+                  {event?.venue?.city || "City"}
+                </Text>
+              </View>
+
+              <View className="flex-row items-center">
+                <Ionicons name="card-outline" size={18} color="#6b7280" />
+                <Text className="text-gray-600 ml-3 text-lg">
+                  Amount Paid: ₹{amount?.toLocaleString() || "0"}
+                </Text>
+              </View>
             </View>
           </View>
         </Card>
 
         {/* Quick Actions */}
         <Card className="mb-6">
-          <Text className="text-lg font-bold text-gray-900 mb-4">
+          <Text className="text-lg font-bold text-gray-900 mb-4 ">
             Quick Actions
           </Text>
 
@@ -163,6 +179,7 @@ const SuccessScreen: React.FC = () => {
               title="Download Ticket"
               onPress={handleDownloadTicket}
               variant="outline"
+              style={{ marginBottom: 12 }}
               leftIcon={
                 <Ionicons name="download-outline" size={20} color="#0ea5e9" />
               }
@@ -180,41 +197,42 @@ const SuccessScreen: React.FC = () => {
         </Card>
 
         {/* Important Information */}
-        <Card className="mb-6">
-          <Text className="text-lg font-bold text-gray-900 mb-4">
+        <Card className="mb-6 ">
+          <Text className="text-lg font-bold text-gray-900 mb-4 ml-2">
             Important Information
           </Text>
 
-          <View className="space-y-4">
-            <View className="flex-row items-start">
+          <View className="">
+            <View className="flex-row items-start mb-3 text-start">
               <Ionicons
                 name="information-circle-outline"
-                size={20}
+                size={22}
                 color="#3b82f6"
               />
-              <Text className="text-gray-600 ml-3 flex-1">
+              <Text className="text-gray-600 ml-3 flex-1 ">
                 Please arrive 30 minutes before the event starts
               </Text>
             </View>
 
-            <View className="flex-row items-start">
+            <View className="flex-row items-start mb-3 text-start">
               <Ionicons
                 name="document-text-outline"
-                size={20}
+                size={22}
+                style={{ marginBottom: 0 }}
                 color="#3b82f6"
               />
-              <Text className="text-gray-600 ml-3 flex-1">
+              <Text className="text-gray-600 ml-3 flex-1 ">
                 Bring a valid ID for verification at the venue
               </Text>
             </View>
 
-            <View className="flex-row items-start">
+            <View className="flex-row items-start mb-3 text-start">
               <Ionicons
                 name="phone-portrait-outline"
-                size={20}
+                size={22}
                 color="#3b82f6"
               />
-              <Text className="text-gray-600 ml-3 flex-1">
+              <Text className="text-gray-600 ml-3 flex-1 ">
                 Show your digital ticket at the entrance
               </Text>
             </View>
@@ -248,21 +266,34 @@ const SuccessScreen: React.FC = () => {
           </View>
 
           <View className="space-y-2">
-            <Text className="text-blue-600 text-sm">
+            <Text className="text-blue-600 text-md">
               • Check your email for detailed booking confirmation
             </Text>
-            <Text className="text-blue-600 text-sm">
+            <Text className="text-blue-600 text-md">
               • Add the event to your calendar
             </Text>
-            <Text className="text-blue-600 text-sm">
+            <Text className="text-blue-600 text-md">
               • Follow the event organizer for updates
             </Text>
           </View>
         </View>
       </ScrollView>
 
-      {/* Bottom Action Bar */}
-      <View className="bg-white border-t border-gray-100 px-5 py-4">
+      {/* Bottom Action Bar - Fixed positioning */}
+      <View
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: "white",
+          borderTopWidth: 1,
+          borderTopColor: "#e5e7eb",
+          paddingHorizontal: 20,
+          paddingVertical: 16,
+          paddingBottom: 32,
+        }}
+      >
         <View className="flex-row space-x-3">
           <Button
             title="View My Bookings"

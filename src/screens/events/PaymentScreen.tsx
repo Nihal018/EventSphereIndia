@@ -11,6 +11,7 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { useBookings } from "../../contexts/BookingsContext";
 import { Booking, MainStackParamList } from "../../types";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useEvents } from "../../hooks/useEvents";
 
 type PaymentScreenNavigationProp =
   NativeStackNavigationProp<MainStackParamList>;
@@ -21,6 +22,9 @@ const PaymentScreen: React.FC = () => {
   const params = route.params as { booking?: Booking } | undefined;
   const booking: Booking | undefined = params?.booking;
   const { createBooking } = useBookings();
+  const { getEventById } = useEvents();
+
+  const event = booking?.eventId ? getEventById(booking.eventId) : undefined;
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
   const [processing, setProcessing] = useState(false);
@@ -30,6 +34,7 @@ const PaymentScreen: React.FC = () => {
     cvv: "",
     name: "",
   });
+  const [upiId, setUpiId] = useState("");
 
   const paymentMethods = [
     { id: "card", name: "Credit/Debit Card", icon: "card-outline" },
@@ -62,19 +67,19 @@ const PaymentScreen: React.FC = () => {
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
       // Ensure booking and booking.event are defined
-      if (!booking || !booking.event) {
+      if (!booking || !event || !booking.eventId) {
         Alert.alert("Booking Error", "Booking information is missing.");
         setProcessing(false);
         return;
       }
 
       // Create booking
-      await createBooking(booking.event.id, booking.quantity ?? 1);
+      await createBooking(booking.eventId, booking.quantity ?? 1);
 
       // Navigate to success screen
-      navigation.navigate("Success" as any, {
+      navigation.navigate("Success", {
         bookingId: Date.now().toString(),
-        event: booking.event,
+        eventId: event.id,
         amount: booking.totalAmount,
       });
     } catch (error) {
@@ -85,7 +90,14 @@ const PaymentScreen: React.FC = () => {
     } finally {
       setProcessing(false);
     }
-  }, [selectedPaymentMethod, cardDetails, navigation, booking, createBooking]);
+  }, [
+    selectedPaymentMethod,
+    cardDetails,
+    navigation,
+    booking,
+    createBooking,
+    event,
+  ]);
 
   const formatCardNumber = (text: string) => {
     const cleaned = text.replace(/\s/g, "");
@@ -98,20 +110,29 @@ const PaymentScreen: React.FC = () => {
     if (cleaned.length <= 2) return cleaned;
     return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`;
   };
-  if (!booking) {
+
+  if (!booking || !event) {
+    console.log("Booking information not found: ", booking);
     return (
-      <SafeAreaView className="flex-1 bg-white justify-center items-center">
-        <Text className="text-red-500 text-lg">
-          Booking information not found.
-        </Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
+        <Header title="Payment" showBack onLeftPress={handleBack} />
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Text style={{ color: "#ef4444", fontSize: 18 }}>
+            Booking information not found.
+          </Text>
+        </View>
       </SafeAreaView>
     );
   }
 
   if (processing) {
     return (
-      <SafeAreaView className="flex-1 bg-white">
-        <View className="flex-1 justify-center items-center">
+      <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
           <LoadingSpinner size="large" text="Processing Payment..." />
           <Text className="text-gray-600 mt-4 text-center px-8">
             Please don't close the app or go back
@@ -122,185 +143,198 @@ const PaymentScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fafafa" }}>
       <Header title="Payment" showBack onLeftPress={handleBack} />
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="px-5 py-6">
-          {/* Order Summary */}
-          <Card className="mb-6">
-            <Text className="text-lg font-bold text-gray-900 mb-4">
-              Order Summary
-            </Text>
-            <View className="flex-row">
-              <View className="w-16 h-16 bg-gray-200 rounded-lg mr-4" />
-              <View className="flex-1">
-                <Text className="font-semibold text-gray-900" numberOfLines={2}>
-                  {booking.event.title}
-                </Text>
-                <Text className="text-gray-600 text-sm mt-1">
-                  {booking.quantity} x tickets
-                </Text>
-                <Text className="text-xl font-bold text-primary-500 mt-2">
-                  ₹{booking.totalAmount.toLocaleString()}
-                </Text>
-              </View>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Order Summary */}
+        <Card className="mb-6 mt-6">
+          <Text className="text-lg font-bold text-gray-900 mb-4">
+            Order Summary
+          </Text>
+          <View className="flex-row">
+            <View className="w-16 h-16 bg-gray-200 rounded-lg mr-4" />
+            <View className="flex-1">
+              <Text className="font-semibold text-gray-900" numberOfLines={2}>
+                {event.title}
+              </Text>
+              <Text className="text-gray-600 text-sm mt-1">
+                {booking.quantity} x tickets
+              </Text>
+              <Text className="text-xl font-bold text-primary-500 mt-2">
+                ₹{booking.totalAmount.toLocaleString()}
+              </Text>
             </View>
-          </Card>
+          </View>
+        </Card>
 
-          {/* Payment Methods */}
-          <Card className="mb-6">
-            <Text className="text-lg font-bold text-gray-900 mb-4">
-              Payment Method
-            </Text>
-            {paymentMethods.map((method) => (
-              <TouchableOpacity
-                key={method.id}
-                onPress={() => setSelectedPaymentMethod(method.id)}
-                className={`flex-row items-center p-4 rounded-xl border mb-3 ${
+        {/* Payment Methods */}
+        <Card className="mb-6">
+          <Text className="text-lg font-bold text-gray-900 mb-4">
+            Payment Method
+          </Text>
+          {paymentMethods.map((method) => (
+            <TouchableOpacity
+              key={method.id}
+              onPress={() => setSelectedPaymentMethod(method.id)}
+              className={`flex-row items-center p-4 rounded-xl border mb-3 ${
+                selectedPaymentMethod === method.id
+                  ? "border-primary-500 bg-primary-50"
+                  : "border-gray-200"
+              }`}
+            >
+              <Ionicons
+                name={method.icon as any}
+                size={24}
+                color={
+                  selectedPaymentMethod === method.id ? "#0ea5e9" : "#6b7280"
+                }
+              />
+              <Text
+                className={`ml-3 flex-1 font-medium ${
                   selectedPaymentMethod === method.id
-                    ? "border-primary-500 bg-primary-50"
-                    : "border-gray-200"
+                    ? "text-primary-700"
+                    : "text-gray-900"
                 }`}
               >
-                <Ionicons
-                  name={method.icon as any}
-                  size={24}
-                  color={
-                    selectedPaymentMethod === method.id ? "#0ea5e9" : "#6b7280"
-                  }
-                />
-                <Text
-                  className={`ml-3 flex-1 font-medium ${
-                    selectedPaymentMethod === method.id
-                      ? "text-primary-700"
-                      : "text-gray-900"
-                  }`}
-                >
-                  {method.name}
-                </Text>
-                {selectedPaymentMethod === method.id && (
-                  <Ionicons name="checkmark-circle" size={20} color="#0ea5e9" />
-                )}
-              </TouchableOpacity>
-            ))}
-          </Card>
-
-          {/* Card Details Form */}
-          {selectedPaymentMethod === "card" && (
-            <Card className="mb-6">
-              <Text className="text-lg font-bold text-gray-900 mb-4">
-                Card Details
+                {method.name}
               </Text>
-              <View className="space-y-4">
+              {selectedPaymentMethod === method.id && (
+                <Ionicons name="checkmark-circle" size={20} color="#0ea5e9" />
+              )}
+            </TouchableOpacity>
+          ))}
+        </Card>
+
+        {/* Card Details Form */}
+        {selectedPaymentMethod === "card" && (
+          <Card className="mb-6">
+            <Text className="text-lg font-bold text-gray-900 mb-4">
+              Card Details
+            </Text>
+            <View className="space-y-4">
+              <Input
+                label="Card Number"
+                placeholder="1234 5678 9012 3456"
+                value={cardDetails.number}
+                onChangeText={(text) =>
+                  setCardDetails((prev) => ({
+                    ...prev,
+                    number: formatCardNumber(text).slice(0, 19),
+                  }))
+                }
+                keyboardType="numeric"
+                leftIcon={
+                  <Ionicons name="card-outline" size={20} color="#6b7280" />
+                }
+              />
+
+              <View className="flex-row space-x-4">
                 <Input
-                  label="Card Number"
-                  placeholder="1234 5678 9012 3456"
-                  value={cardDetails.number}
+                  label="Expiry Date"
+                  placeholder="MM/YY"
+                  value={cardDetails.expiry}
                   onChangeText={(text) =>
                     setCardDetails((prev) => ({
                       ...prev,
-                      number: formatCardNumber(text).slice(0, 19),
+                      expiry: formatExpiry(text).slice(0, 5),
                     }))
                   }
                   keyboardType="numeric"
-                  leftIcon={
-                    <Ionicons name="card-outline" size={20} color="#6b7280" />
-                  }
+                  style={{ flex: 1 }}
                 />
 
-                <View className="flex-row space-x-4">
-                  <Input
-                    label="Expiry Date"
-                    placeholder="MM/YY"
-                    value={cardDetails.expiry}
-                    onChangeText={(text) =>
-                      setCardDetails((prev) => ({
-                        ...prev,
-                        expiry: formatExpiry(text).slice(0, 5),
-                      }))
-                    }
-                    keyboardType="numeric"
-                    style={{ flex: 1 }}
-                  />
-
-                  <Input
-                    label="CVV"
-                    placeholder="123"
-                    value={cardDetails.cvv}
-                    onChangeText={(text) =>
-                      setCardDetails((prev) => ({
-                        ...prev,
-                        cvv: text.replace(/\D/g, "").slice(0, 4),
-                      }))
-                    }
-                    keyboardType="numeric"
-                    secureTextEntry
-                    style={{ flex: 1 }}
-                  />
-                </View>
-
                 <Input
-                  label="Cardholder Name"
-                  placeholder="John Doe"
-                  value={cardDetails.name}
+                  label="CVV"
+                  placeholder="123"
+                  value={cardDetails.cvv}
                   onChangeText={(text) =>
-                    setCardDetails((prev) => ({ ...prev, name: text }))
+                    setCardDetails((prev) => ({
+                      ...prev,
+                      cvv: text.replace(/\D/g, "").slice(0, 4),
+                    }))
                   }
-                  autoCapitalize="words"
-                  leftIcon={
-                    <Ionicons name="person-outline" size={20} color="#6b7280" />
-                  }
+                  keyboardType="numeric"
+                  secureTextEntry
+                  style={{ flex: 1 }}
                 />
               </View>
-            </Card>
-          )}
 
-          {/* UPI Payment */}
-          {selectedPaymentMethod === "upi" && (
-            <Card className="mb-6">
-              <Text className="text-lg font-bold text-gray-900 mb-4">
-                UPI Payment
-              </Text>
-              <View className="space-y-4">
-                <Input
-                  label="UPI ID"
-                  placeholder="your-upi-id@bank"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  leftIcon={
-                    <Ionicons
-                      name="phone-portrait-outline"
-                      size={20}
-                      color="#6b7280"
-                    />
-                  }
-                  value={""}
-                  onChangeText={function (text: string): void {
-                    throw new Error("Function not implemented.");
-                  }}
-                />
-              </View>
-            </Card>
-          )}
-
-          {/* Security Notice */}
-          <View className="bg-green-50 p-4 rounded-xl mb-6">
-            <View className="flex-row items-center">
-              <Ionicons name="shield-checkmark" size={20} color="#10b981" />
-              <Text className="text-green-700 font-medium ml-2">
-                Secure Payment
-              </Text>
+              <Input
+                label="Cardholder Name"
+                placeholder="John Doe"
+                value={cardDetails.name}
+                onChangeText={(text) =>
+                  setCardDetails((prev) => ({ ...prev, name: text }))
+                }
+                autoCapitalize="words"
+                leftIcon={
+                  <Ionicons name="person-outline" size={20} color="#6b7280" />
+                }
+              />
             </View>
-            <Text className="text-green-600 text-sm mt-1">
-              Your payment information is encrypted and secure
+          </Card>
+        )}
+
+        {/* UPI Payment */}
+        {selectedPaymentMethod === "upi" && (
+          <Card className="mb-6">
+            <Text className="text-lg font-bold text-gray-900 mb-4">
+              UPI Payment
+            </Text>
+            <View className="space-y-4">
+              <Input
+                label="UPI ID"
+                placeholder="your-upi-id@bank"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={upiId}
+                onChangeText={setUpiId}
+                leftIcon={
+                  <Ionicons
+                    name="phone-portrait-outline"
+                    size={20}
+                    color="#6b7280"
+                  />
+                }
+              />
+            </View>
+          </Card>
+        )}
+
+        {/* Security Notice */}
+        <View className="bg-green-50 p-4 rounded-xl mb-6">
+          <View className="flex-row items-center">
+            <Ionicons name="shield-checkmark" size={20} color="#10b981" />
+            <Text className="text-green-700 font-medium ml-2">
+              Secure Payment
             </Text>
           </View>
+          <Text className="text-green-600 text-sm mt-1">
+            Your payment information is encrypted and secure
+          </Text>
         </View>
       </ScrollView>
 
-      {/* Bottom Action Bar */}
-      <View className="bg-white border-t border-gray-100 px-5 py-4">
+      {/* Bottom Action Bar - Fixed positioning */}
+      <View
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: "white",
+          borderTopWidth: 1,
+          borderTopColor: "#e5e7eb",
+          paddingHorizontal: 20,
+          paddingVertical: 16,
+          paddingBottom: 32, // Extra padding for safe area
+        }}
+      >
         <View className="flex-row items-center justify-between mb-3">
           <Text className="text-gray-500">Amount to Pay</Text>
           <Text className="text-xl font-bold text-gray-900">
