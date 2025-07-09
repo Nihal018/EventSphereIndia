@@ -5,14 +5,15 @@ import {
   ActivityIndicator,
   ViewStyle,
   TextStyle,
+  View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: "primary" | "secondary" | "outline" | "ghost";
-  size?: "sm" | "md" | "lg";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "destructive";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   disabled?: boolean;
   loading?: boolean;
   leftIcon?: React.ReactNode;
@@ -20,9 +21,13 @@ interface ButtonProps {
   style?: ViewStyle;
   textStyle?: TextStyle;
   gradient?: boolean;
+  fullWidth?: boolean;
+  className?: string;
+  textClassName?: string;
+  rounded?: "none" | "sm" | "md" | "lg" | "xl" | "full";
 }
 
-export default function Button({
+const Button: React.FC<ButtonProps> = ({
   title,
   onPress,
   variant = "primary",
@@ -34,104 +39,220 @@ export default function Button({
   style,
   textStyle,
   gradient = false,
-}: ButtonProps) {
-  const getButtonClasses = () => {
-    const baseClasses = "flex-row items-center justify-center rounded-xl";
-
-    const sizeClasses = {
-      sm: "px-4 py-2 h-10",
-      md: "px-6 py-3 h-12",
-      lg: "px-8 py-2 h-14",
-    };
-
-    const variantClasses = {
-      primary: "bg-primary-500",
-      secondary: "bg-accent-500",
-      outline: "border-2 border-primary-500 bg-transparent",
-      ghost: "bg-transparent",
-    };
-
-    return `${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]}`;
+  fullWidth = false,
+  className = "",
+  textClassName = "",
+  rounded = "lg",
+}) => {
+  // Size configurations
+  const sizeConfigs = {
+    xs: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      minHeight: 32,
+    },
+    sm: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      minHeight: 36,
+    },
+    md: {
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      minHeight: 44,
+    },
+    lg: {
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      minHeight: 48,
+    },
+    xl: {
+      paddingHorizontal: 32,
+      paddingVertical: 16,
+      minHeight: 56,
+    },
   };
 
-  const getTextClasses = () => {
-    const baseClasses = "font-semibold text-center";
-
-    const sizeClasses = {
-      sm: "text-sm",
-      md: "text-base",
-      lg: "text-lg",
-    };
-
-    const variantClasses = {
-      primary: "text-white",
-      secondary: "text-white",
-      outline: "text-primary-500",
-      ghost: "text-primary-500",
-    };
-
-    return `${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]}`;
+  // Rounded configurations
+  const roundedConfigs = {
+    none: 0,
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    full: 999,
   };
 
-  const buttonClass = getButtonClasses();
-  const textClass = getTextClasses();
+  // Variant configurations
+  const variantConfigs = {
+    primary: {
+      backgroundColor: "#0ea5e9",
+      borderColor: "#0ea5e9",
+      borderWidth: 0,
+      textColor: "#ffffff",
+    },
+    secondary: {
+      backgroundColor: "#f37316",
+      borderColor: "#f37316",
+      borderWidth: 0,
+      textColor: "#ffffff",
+    },
+    outline: {
+      backgroundColor: "transparent",
+      borderColor: "#0ea5e9",
+      borderWidth: 2,
+      textColor: "#0ea5e9",
+    },
+    ghost: {
+      backgroundColor: "transparent",
+      borderColor: "transparent",
+      borderWidth: 0,
+      textColor: "#0ea5e9",
+    },
+    destructive: {
+      backgroundColor: "#ef4444",
+      borderColor: "#ef4444",
+      borderWidth: 0,
+      textColor: "#ffffff",
+    },
+  };
+
+  // Text size configurations
+  const textSizeConfigs = {
+    xs: 12,
+    sm: 14,
+    md: 16,
+    lg: 18,
+    xl: 20,
+  };
+
+  // Gradient configurations
+  const gradientConfigs = {
+    primary: ["#0ea5e9", "#0284c7"],
+    secondary: ["#f37316", "#e85d04"],
+    destructive: ["#ef4444", "#dc2626"],
+  };
+
+  const sizeConfig = sizeConfigs[size];
+  const variantConfig = variantConfigs[variant];
+  const textSize = textSizeConfigs[size];
+  const borderRadius = roundedConfigs[rounded];
 
   const isDisabled = disabled || loading;
-  const opacity = isDisabled ? 0.5 : 1;
+  const opacity = isDisabled ? 0.6 : 1;
 
-  if (gradient && (variant === "primary" || variant === "secondary")) {
-    const gradientColors: [string, string] =
-      variant === "primary" ? ["#0ea5e9", "#0284c7"] : ["#f37316", "#e85d04"];
+  // Combined button style - Fixed to use proper ViewStyle
+  const buttonStyle: ViewStyle = {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    ...sizeConfig,
+    backgroundColor: variantConfig.backgroundColor,
+    borderColor: variantConfig.borderColor,
+    borderWidth: variantConfig.borderWidth,
+    borderRadius,
+    opacity,
+    width: fullWidth ? "100%" : undefined,
+    ...style,
+  };
+
+  // Combined text style
+  const combinedTextStyle: TextStyle = {
+    color: variantConfig.textColor,
+    fontSize: textSize,
+    fontWeight: "600",
+    textAlign: "center",
+    ...textStyle,
+  };
+
+  // Loading indicator color
+  const getLoadingColor = () => {
+    if (variant === "outline" || variant === "ghost") {
+      return "#0ea5e9";
+    }
+    return "#ffffff";
+  };
+
+  // Render gradient button
+  if (
+    gradient &&
+    (variant === "primary" ||
+      variant === "secondary" ||
+      variant === "destructive")
+  ) {
+    const gradientColors = gradientConfigs[variant] || gradientConfigs.primary;
 
     return (
       <TouchableOpacity
         onPress={onPress}
         disabled={isDisabled}
-        style={[{ opacity }, style]}
-        className={buttonClass
-          .replace("bg-primary-500", "")
-          .replace("bg-accent-500", "")}
+        style={[buttonStyle, { backgroundColor: "transparent" }]}
+        activeOpacity={0.8}
       >
         <LinearGradient
           colors={gradientColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
-          className="flex-1 flex-row items-center justify-center rounded-xl"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            borderRadius,
+          }}
+        />
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
           {loading && (
-            <ActivityIndicator size="small" color="white" className="mr-2" />
+            <ActivityIndicator
+              size="small"
+              color="#ffffff"
+              style={{ marginRight: leftIcon || title ? 8 : 0 }}
+            />
           )}
-          {leftIcon && !loading && <>{leftIcon}</>}
-          <Text className={textClass} style={textStyle}>
-            {title}
-          </Text>
-          {rightIcon && !loading && <>{rightIcon}</>}
-        </LinearGradient>
+          {leftIcon && !loading && (
+            <View style={{ marginRight: 8 }}>{leftIcon}</View>
+          )}
+          <Text style={combinedTextStyle}>{title}</Text>
+          {rightIcon && !loading && (
+            <View style={{ marginLeft: 8 }}>{rightIcon}</View>
+          )}
+        </View>
       </TouchableOpacity>
     );
   }
 
+  // Render regular button
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={isDisabled}
-      style={[{ opacity }, style]}
-      className={buttonClass}
+      style={buttonStyle}
+      activeOpacity={0.8}
     >
       {loading && (
         <ActivityIndicator
           size="small"
-          color={
-            variant === "outline" || variant === "ghost" ? "#0ea5e9" : "white"
-          }
-          className="mr-2"
+          color={getLoadingColor()}
+          style={{ marginRight: leftIcon || title ? 8 : 0 }}
         />
       )}
-      {leftIcon && !loading && <>{leftIcon}</>}
-      <Text className={textClass} style={textStyle}>
-        {title}
-      </Text>
-      {rightIcon && !loading && <>{rightIcon}</>}
+      {leftIcon && !loading && (
+        <View style={{ marginRight: 8 }}>{leftIcon}</View>
+      )}
+      <Text style={combinedTextStyle}>{title}</Text>
+      {rightIcon && !loading && (
+        <View style={{ marginLeft: 8 }}>{rightIcon}</View>
+      )}
     </TouchableOpacity>
   );
-}
+};
+
+export default Button;

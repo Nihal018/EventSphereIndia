@@ -2,17 +2,27 @@ import React, { useEffect, useCallback, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import {
+  CompositeNavigationProp,
+  useNavigation,
+} from "@react-navigation/native";
 import Header from "../../components/common/Header";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { format } from "date-fns";
 import { useBookings } from "../../contexts/BookingsContext";
-import { HomeScreenNavigationProp } from "./HomeScreen";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { MainTabParamList, MainStackParamList } from "../../types";
+
+type BookingsScreenNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<MainTabParamList, "Bookings">,
+  NativeStackNavigationProp<MainStackParamList>
+>;
 
 const BookingsScreen: React.FC = () => {
-  const navigation = useNavigation<HomeScreenNavigationProp>();
+  const navigation = useNavigation<BookingsScreenNavigationProp>();
   const { fetchBookings, bookings, bookingsLoading, bookingsError } =
     useBookings();
   const [selectedTab, setSelectedTab] = useState<"upcoming" | "past">(
@@ -52,7 +62,6 @@ const BookingsScreen: React.FC = () => {
           text: "Yes",
           style: "destructive",
           onPress: () => {
-            // Implement cancellation logic
             console.log("Cancelling booking:", bookingId);
           },
         },
@@ -60,8 +69,19 @@ const BookingsScreen: React.FC = () => {
     );
   }, []);
 
+  // Safe date formatting function
+  const formatDate = (date: Date | string) => {
+    try {
+      const dateObj = typeof date === "string" ? new Date(date) : date;
+      if (isNaN(dateObj.getTime())) return "Date unavailable";
+      return format(dateObj, "MMM dd, yyyy");
+    } catch (error) {
+      return "Date unavailable";
+    }
+  };
+
   const BookingCard = ({ booking }: { booking: any }) => (
-    <Card style={{ marginBottom: 16 }}>
+    <Card className="mb-4">
       <TouchableOpacity onPress={() => handleBookingPress(booking)}>
         <View className="flex-row">
           <View className="w-20 h-20 bg-gray-200 rounded-lg mr-4" />
@@ -72,8 +92,7 @@ const BookingsScreen: React.FC = () => {
             <View className="flex-row items-center mt-1">
               <Ionicons name="calendar-outline" size={14} color="#6b7280" />
               <Text className="text-gray-500 text-sm ml-1">
-                {format(booking.event.date, "MMM dd, yyyy")} •{" "}
-                {booking.event.time}
+                {formatDate(booking.event.date)} • {booking.event.time}
               </Text>
             </View>
             <View className="flex-row items-center mt-1">
@@ -162,20 +181,33 @@ const BookingsScreen: React.FC = () => {
     </View>
   );
 
+  // Loading state
   if (bookingsLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#fafafa" }}>
         <Header title="My Bookings" />
-        <LoadingSpinner text="Loading bookings..." />
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <LoadingSpinner text="Loading bookings..." />
+        </View>
       </SafeAreaView>
     );
   }
 
+  // Error state
   if (bookingsError) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#fafafa" }}>
         <Header title="My Bookings" />
-        <View className="flex-1 justify-center items-center px-6">
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 24,
+          }}
+        >
           <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
           <Text className="text-xl font-bold text-gray-900 mt-4 text-center">
             Failed to load bookings
@@ -194,39 +226,68 @@ const BookingsScreen: React.FC = () => {
     );
   }
 
+  // Main content
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fafafa" }}>
       <Header title="My Bookings" />
 
+      {/* Tab Selector */}
       <View className="px-5 py-4">
         <View className="flex-row bg-gray-100 rounded-xl p-1">
           <TouchableOpacity
+            key="upcoming-tab"
             onPress={() => setSelectedTab("upcoming")}
-            className={`flex-1 py-3 rounded-lg ${
-              selectedTab === "upcoming" ? "bg-white shadow-sm" : ""
-            }`}
+            style={{
+              flex: 1,
+              paddingVertical: 12,
+              borderRadius: 8,
+              backgroundColor:
+                selectedTab === "upcoming" ? "white" : "transparent",
+              shadowColor: selectedTab === "upcoming" ? "#000" : "transparent",
+              shadowOffset:
+                selectedTab === "upcoming"
+                  ? { width: 0, height: 1 }
+                  : { width: 0, height: 0 },
+              shadowOpacity: selectedTab === "upcoming" ? 0.1 : 0,
+              shadowRadius: selectedTab === "upcoming" ? 2 : 0,
+              elevation: selectedTab === "upcoming" ? 2 : 0,
+            }}
           >
             <Text
-              className={`text-center font-semibold ${
-                selectedTab === "upcoming"
-                  ? "text-primary-500"
-                  : "text-gray-500"
-              }`}
+              style={{
+                textAlign: "center",
+                fontWeight: "600",
+                color: selectedTab === "upcoming" ? "#0ea5e9" : "#6b7280",
+              }}
             >
               Upcoming ({upcomingBookings.length})
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
+            key="past-tab"
             onPress={() => setSelectedTab("past")}
-            className={`flex-1 py-3 rounded-lg ${
-              selectedTab === "past" ? "bg-white shadow-sm" : ""
-            }`}
+            style={{
+              flex: 1,
+              paddingVertical: 12,
+              borderRadius: 8,
+              backgroundColor: selectedTab === "past" ? "white" : "transparent",
+              shadowColor: selectedTab === "past" ? "#000" : "transparent",
+              shadowOffset:
+                selectedTab === "past"
+                  ? { width: 0, height: 1 }
+                  : { width: 0, height: 0 },
+              shadowOpacity: selectedTab === "past" ? 0.1 : 0,
+              shadowRadius: selectedTab === "past" ? 2 : 0,
+              elevation: selectedTab === "past" ? 2 : 0,
+            }}
           >
             <Text
-              className={`text-center font-semibold ${
-                selectedTab === "past" ? "text-primary-500" : "text-gray-500"
-              }`}
+              style={{
+                textAlign: "center",
+                fontWeight: "600",
+                color: selectedTab === "past" ? "#0ea5e9" : "#6b7280",
+              }}
             >
               Past ({pastBookings.length})
             </Text>
@@ -234,7 +295,16 @@ const BookingsScreen: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
+      {/* Content */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingBottom: 20,
+          flexGrow: 1,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
         {selectedTab === "upcoming" ? (
           upcomingBookings.length > 0 ? (
             upcomingBookings.map((booking) => (

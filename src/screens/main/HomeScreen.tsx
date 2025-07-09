@@ -353,11 +353,11 @@ const HomeScreen: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#fafafa" }}>
         <FlatList // Main vertical FlatList for 'All Events'
           data={events} // The main data source for the FlatList
           keyExtractor={(item) => item.id}
-          renderItem={renderEventItem} // Renders individual EventCard components
+          renderItem={renderEventItem}
           ListHeaderComponent={renderListHeader} // All static content goes here
           ListEmptyComponent={() =>
             // Handles the case when 'events' is empty

@@ -31,79 +31,156 @@ const ProfileScreen: React.FC = () => {
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <Header title="Profile" />
-
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="px-5 py-6">
-          {/* Profile Header */}
-          <Card className="items-center p-6 mb-6">
-            <View className="w-24 h-24 bg-primary-100 rounded-full items-center justify-center mb-4">
-              <Text className="text-primary-500 text-2xl font-bold">
-                {user?.name?.charAt(0).toUpperCase()}
-              </Text>
-            </View>
-            <Text className="text-xl font-bold text-gray-900 mb-1">
-              {user?.name || "User"}
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: "#fafafa" }}
+      edges={["left", "right", "bottom"]}
+    >
+      <ScrollView
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 24,
+          paddingBottom: 4,
+        }}
+      >
+        {/* Profile Header */}
+        <Card style={{ alignItems: "center", padding: 24, marginBottom: 24 }}>
+          <View
+            style={{
+              width: 96,
+              height: 96,
+              backgroundColor: "#dbeafe",
+              borderRadius: 48,
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 16,
+            }}
+          >
+            <Text
+              style={{
+                color: "#0ea5e9",
+                fontSize: 32,
+                fontWeight: "bold",
+              }}
+            >
+              {user?.name?.charAt(0).toUpperCase() || "U"}
             </Text>
-            <Text className="text-gray-500 mb-4">{user?.email}</Text>
-            <Button
-              title="Edit Profile"
-              onPress={() => {}}
-              variant="outline"
-              size="sm"
-            />
-          </Card>
+          </View>
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "bold",
+              color: "#1f2937",
+              marginBottom: 4,
+            }}
+          >
+            {user?.name || "User"}
+          </Text>
+          <Text
+            style={{
+              color: "#6b7280",
+              marginBottom: 16,
+            }}
+          >
+            {user?.email || "user@example.com"}
+          </Text>
+          <Button
+            title="Edit Profile"
+            onPress={() => {}}
+            variant="outline"
+            size="sm"
+          />
+        </Card>
 
-          {/* Menu Items */}
-          <Card style={{ marginBottom: 12 }}>
-            {menuItems.map((item, index) => (
-              <TouchableOpacity
-                key={item.title}
-                onPress={item.onPress}
-                className={`flex-row items-center py-4 ${
-                  index < menuItems.length - 1 ? "border-b border-gray-100" : ""
-                }`}
+        {/* Menu Items */}
+        <Card style={{ marginBottom: 24 }}>
+          {menuItems.map((item, index) => (
+            <TouchableOpacity
+              key={item.title}
+              onPress={item.onPress}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 16,
+                borderBottomWidth: index < menuItems.length - 1 ? 1 : 0,
+                borderBottomColor: "#f3f4f6",
+              }}
+            >
+              <Ionicons name={item.icon as any} size={24} color="#6b7280" />
+              <Text
+                style={{
+                  flex: 1,
+                  color: "#1f2937",
+                  fontWeight: "500",
+                  marginLeft: 16,
+                }}
               >
-                <Ionicons name={item.icon as any} size={24} color="#6b7280" />
-                <Text className="flex-1 text-gray-900 font-medium ml-4">
-                  {item.title}
-                </Text>
-                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-              </TouchableOpacity>
-            ))}
-          </Card>
-
-          {/* App Info */}
-          <Card className="mb-6">
-            <View className="flex-row items-center justify-between py-4 border-b border-gray-100">
-              <Text className="text-gray-900 font-medium">Version</Text>
-              <Text className="text-gray-500">1.0.0</Text>
-            </View>
-            <TouchableOpacity className="flex-row items-center justify-between py-4 border-b border-gray-100">
-              <Text className="text-gray-900 font-medium">
-                Terms & Conditions
+                {item.title}
               </Text>
               <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
             </TouchableOpacity>
-            <TouchableOpacity className="flex-row items-center justify-between py-4">
-              <Text className="text-gray-900 font-medium">Privacy Policy</Text>
-              <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-            </TouchableOpacity>
-          </Card>
+          ))}
+        </Card>
 
-          {/* Logout Button */}
-          <Button
-            title="Logout"
-            onPress={handleLogout}
-            variant="outline"
-            style={{ borderColor: "#ef4444" }}
-            textStyle={{ color: "#ef4444" }}
-            leftIcon={
-              <Ionicons name="log-out-outline" size={20} color="#ef4444" />
-            }
-          />
-        </View>
+        {/* App Info */}
+        <Card style={{ marginBottom: 24 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingVertical: 16,
+              borderBottomWidth: 1,
+              borderBottomColor: "#f3f4f6",
+            }}
+          >
+            <Text style={{ color: "#1f2937", fontWeight: "500" }}>Version</Text>
+            <Text style={{ color: "#6b7280" }}>1.0.0</Text>
+          </View>
+
+          <TouchableOpacity
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingVertical: 16,
+              borderBottomWidth: 1,
+              borderBottomColor: "#f3f4f6",
+            }}
+          >
+            <Text style={{ color: "#1f2937", fontWeight: "500" }}>
+              Terms & Conditions
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingVertical: 16,
+            }}
+          >
+            <Text style={{ color: "#1f2937", fontWeight: "500" }}>
+              Privacy Policy
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+          </TouchableOpacity>
+        </Card>
+
+        {/* Logout Button */}
+        <Button
+          title="Logout"
+          onPress={handleLogout}
+          variant="outline"
+          style={{ borderColor: "#ef4444", width: "50%", alignSelf: "center" }}
+          textStyle={{ color: "#ef4444" }}
+          leftIcon={
+            <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+          }
+        />
       </ScrollView>
     </SafeAreaView>
   );

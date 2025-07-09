@@ -2,7 +2,7 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
-import { View, Text } from "react-native";
+import { View, Text, Platform } from "react-native";
 
 // Import screens
 import {
@@ -43,9 +43,9 @@ function MainTabs() {
           backgroundColor: "#ffffff",
           borderTopWidth: 1,
           borderTopColor: "#e5e7eb",
-          height: 60,
+          height: Platform.OS === "ios" ? 70 : 60,
           paddingBottom: 8,
-          paddingTop: 8,
+          paddingTop: 6,
         },
         tabBarActiveTintColor: "#0ea5e9",
         tabBarInactiveTintColor: "#6b7280",
@@ -61,6 +61,12 @@ function MainTabs() {
         component={HomeScreen}
         options={{
           tabBarLabel: "Home",
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: "600",
+            marginBottom: 6,
+          },
+
           tabBarIcon: ({ focused, color }) => (
             <TabBarIcon
               name={focused ? "home" : "home-outline"}
@@ -76,6 +82,11 @@ function MainTabs() {
         options={{
           headerShown: false,
           tabBarLabel: "Explore",
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: "600",
+            marginBottom: 6,
+          },
           tabBarIcon: ({ focused, color }) => (
             <TabBarIcon
               name={focused ? "search" : "search-outline"}
@@ -90,6 +101,11 @@ function MainTabs() {
         component={BookingsScreen}
         options={{
           headerShown: false,
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: "600",
+            marginBottom: 6,
+          },
           tabBarLabel: "Bookings",
           tabBarIcon: ({ focused, color }) => (
             <TabBarIcon
@@ -106,6 +122,11 @@ function MainTabs() {
         options={{
           headerShown: false,
           tabBarLabel: "Profile",
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: "600",
+            marginBottom: 6,
+          },
           tabBarIcon: ({ focused, color }) => (
             <TabBarIcon
               name={focused ? "person" : "person-outline"}
