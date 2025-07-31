@@ -177,7 +177,7 @@ const SearchScreen: React.FC = () => {
         numColumns={2}
         onEventPress={handleEventPress}
         onLike={toggleLikeEvent}
-        style={{ paddingHorizontal: 0, marginBottom: 0 }}
+        style={{ paddingHorizontal: 0 }}
         isLiked={isEventLiked}
         emptyMessage="No events found matching your search"
       />

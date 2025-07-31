@@ -326,6 +326,7 @@ const BookingScreen: React.FC = () => {
           title="Proceed to Payment"
           onPress={handleProceedToPayment}
           gradient
+          style={{ width: "70%", alignSelf: "center" }}
           size="lg"
         />
       </View>

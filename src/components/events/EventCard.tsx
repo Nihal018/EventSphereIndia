@@ -6,6 +6,7 @@ import {
   ImageBackground,
   ViewStyle,
   Pressable,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,7 +19,7 @@ interface EventCardProps {
   event: Event;
   onPress: (event: Event) => void;
   onLike?: (eventId: string) => void;
-  style?: ViewStyle; // This style prop carries the crucial width and margins
+  style?: ViewStyle;
   variant?: "default" | "featured" | "compact";
   isLiked?: boolean;
 }
@@ -29,10 +30,9 @@ const EventCard = memo<EventCardProps>(
       onPress(event);
     }, [event, onPress]);
 
-    // Added type for e: GestureResponderEvent to ensure stopPropagation works correctly
     const handleLike = useCallback(
       (e: import("react-native").GestureResponderEvent) => {
-        e.stopPropagation(); // Prevents onPress on the card itself
+        e.stopPropagation();
         onLike?.(event.id);
       },
       [event.id, onLike]
@@ -46,17 +46,17 @@ const EventCard = memo<EventCardProps>(
       const available = event.capacity - event.bookedCount;
       const percentage = (available / event.capacity) * 100;
 
-      let color = "#10b981"; // green
+      let color = "#10b981";
       let text = "Available";
 
       if (available === 0) {
-        color = "#ef4444"; // red
+        color = "#ef4444";
         text = "Sold Out";
       } else if (percentage <= 20) {
-        color = "#ef4444"; // red
+        color = "#ef4444";
         text = `${available} left`;
       } else if (percentage <= 50) {
-        color = "#f59e0b"; // yellow
+        color = "#f59e0b";
         text = `${available} left`;
       }
 
@@ -66,7 +66,6 @@ const EventCard = memo<EventCardProps>(
     const { color: availabilityColor, text: availabilityText } =
       getAvailabilityInfo();
 
-    // Minor simplification: Combine className and style directly if possible
     const LikeButton = memo(() => (
       <Pressable
         onPress={handleLike}
@@ -94,7 +93,7 @@ const EventCard = memo<EventCardProps>(
             className={`font-bold ${
               variant === "featured"
                 ? "text-white text-lg"
-                : "text-primary-500 text-lg" // Simplified: compact and default use the same color
+                : "text-primary-500 text-lg"
             }`}
           >
             Free
@@ -104,7 +103,7 @@ const EventCard = memo<EventCardProps>(
             className={`font-bold ${
               variant === "featured"
                 ? "text-white text-lg"
-                : "text-gray-900 text-lg" // Simplified: compact and default use the same color
+                : "text-gray-900 text-lg"
             }`}
           >
             ₹{event.price.min.toLocaleString()}
@@ -143,103 +142,13 @@ const EventCard = memo<EventCardProps>(
       </View>
     ));
 
-    // --- VARIANT RENDERING ---
-    if (variant === "featured") {
-      return (
-        <Pressable
-          onPress={handlePress}
-          // Apply the style prop directly here.
-          // Any width/margin from EventList will apply correctly.
-          style={[style]} // Removed fixed marginBottom as EventList now handles it
-          android_ripple={{ color: "rgba(255,255,255,0.1)" }}
-        >
-          <View className="h-80 rounded-3xl overflow-hidden">
-            <ImageBackground
-              source={{ uri: event.images[0] }}
-              className="flex-1"
-              resizeMode="cover"
-            >
-              <LinearGradient
-                colors={["transparent", "rgba(0,0,0,0.8)"]}
-                className="flex-1 justify-end p-6"
-              >
-                {/* Category Badge */}
-                <View className="absolute top-4 left-4">
-                  <BlurView
-                    intensity={20}
-                    tint="light"
-                    className="rounded-full px-3 py-1"
-                  >
-                    <Text className="text-white text-xs font-medium">
-                      {event.category}
-                    </Text>
-                  </BlurView>
-                </View>
-
-                {/* Like Button */}
-                <View className="absolute top-4 right-4">
-                  <LikeButton />
-                </View>
-
-                {/* Event Info */}
-                <View className="space-y-2">
-                  <Text
-                    className="text-white text-2xl font-bold"
-                    numberOfLines={2}
-                  >
-                    {event.title}
-                  </Text>
-
-                  <View className="flex-row items-center flex-wrap gap-4">
-                    <View className="flex-row items-center">
-                      <Ionicons
-                        name="calendar-outline"
-                        size={16}
-                        color="white"
-                      />
-                      <Text className="text-white text-sm ml-1">
-                        {formatDate(event.date)}
-                      </Text>
-                    </View>
-
-                    <View className="flex-row items-center">
-                      <Ionicons name="time-outline" size={16} color="white" />
-                      <Text className="text-white text-sm ml-1">
-                        {event.time}
-                      </Text>
-                    </View>
-
-                    <View className="flex-row items-center">
-                      <Ionicons
-                        name="location-outline"
-                        size={16}
-                        color="white"
-                      />
-                      <Text className="text-white text-sm ml-1">
-                        {event.venue.city}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View className="flex-row items-center justify-between mt-3">
-                    <PriceDisplay />
-                    <AvailabilityBadge />
-                  </View>
-                </View>
-              </LinearGradient>
-            </ImageBackground>
-          </View>
-        </Pressable>
-      );
-    }
-
+    // Compact variant (unchanged)
     if (variant === "compact") {
       return (
         <Pressable
           onPress={handlePress}
-          // Apply the style prop here.
-          style={[style]} // Removed fixed mb-3 from className
-          className="flex-row bg-white rounded-xl p-4" // Removed mb-3
+          style={[style]}
+          className="flex-row bg-white rounded-xl p-4 shadow-md"
           android_ripple={{ color: "rgba(14, 165, 233, 0.1)" }}
         >
           <View className="w-20 h-20 rounded-xl overflow-hidden mr-4">
@@ -281,13 +190,254 @@ const EventCard = memo<EventCardProps>(
       );
     }
 
-    // Default variant
+    // FIXED Featured variant
+    if (variant === "featured") {
+      return (
+        <Pressable
+          onPress={handlePress}
+          style={[
+            style,
+            {
+              // iOS-specific shadow styling
+              ...Platform.select({
+                ios: {
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 8,
+                },
+                android: {
+                  elevation: 6,
+                },
+              }),
+            },
+          ]}
+          className="shadow-sm"
+          android_ripple={{ color: "rgba(255,255,255,0.1)" }}
+        >
+          <View
+            className="h-72 rounded-3xl overflow-hidden"
+            style={{
+              // Ensure proper clipping on iOS
+              ...Platform.select({
+                ios: {
+                  backgroundColor: "transparent",
+                },
+              }),
+            }}
+          >
+            <ImageBackground
+              source={{ uri: event.images[0] }}
+              className="flex-1"
+              resizeMode="cover"
+              // Add imageStyle for better iOS handling
+              imageStyle={{
+                borderRadius: 24, // Match rounded-3xl
+              }}
+            >
+              {/* Enhanced gradient for better iOS visibility */}
+              <LinearGradient
+                colors={[
+                  "transparent",
+                  "rgba(0,0,0,0.1)",
+                  "rgba(0,0,0,0.6)",
+                  "rgba(0,0,0,0.8)",
+                ]}
+                locations={[0, 0.3, 0.7, 1]}
+                className="flex-1 justify-end"
+                style={{
+                  paddingBottom: 24,
+                  paddingLeft: 24,
+                  paddingRight: 24,
+                  paddingTop: 24,
+                }}
+              >
+                {/* Category Badge - Fixed positioning */}
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 16,
+                    left: 16,
+                    zIndex: 10,
+                  }}
+                >
+                  <BlurView
+                    intensity={Platform.OS === "ios" ? 25 : 20}
+                    tint="light"
+                    style={{
+                      borderRadius: 20,
+                      paddingHorizontal: 12,
+                      paddingVertical: 4,
+                      // iOS-specific blur background
+                      ...Platform.select({
+                        ios: {
+                          backgroundColor: "rgba(255, 255, 255, 0.25)",
+                        },
+                        android: {
+                          backgroundColor: "rgba(255, 255, 255, 0.15)",
+                        },
+                      }),
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "white",
+                        fontSize: 12,
+                        fontWeight: "500",
+                        textShadowColor: "rgba(0, 0, 0, 0.3)",
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 2,
+                      }}
+                    >
+                      {event.category}
+                    </Text>
+                  </BlurView>
+                </View>
+
+                {/* Like Button - Fixed positioning */}
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 16,
+                    right: 16,
+                    zIndex: 10,
+                  }}
+                >
+                  <LikeButton />
+                </View>
+
+                {/* Event Info - Better spacing and text shadows */}
+                <View style={{ gap: 8, marginTop: 16 }}>
+                  <Text
+                    style={{
+                      color: "white",
+                      fontSize: 24,
+                      fontWeight: "bold",
+                      lineHeight: 28,
+                      textShadowColor: "rgba(0, 0, 0, 0.5)",
+                      textShadowOffset: { width: 0, height: 1 },
+                      textShadowRadius: 4,
+                    }}
+                    numberOfLines={2}
+                  >
+                    {event.title}
+                  </Text>
+
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 16,
+                    }}
+                  >
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
+                      <Ionicons
+                        name="calendar-outline"
+                        size={16}
+                        color="white"
+                        style={{
+                          textShadowColor: "rgba(0, 0, 0, 0.5)",
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 2,
+                        }}
+                      />
+                      <Text
+                        style={{
+                          color: "white",
+                          fontSize: 14,
+                          marginLeft: 4,
+                          textShadowColor: "rgba(0, 0, 0, 0.5)",
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 2,
+                        }}
+                      >
+                        {formatDate(event.date)}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
+                      <Ionicons
+                        name="time-outline"
+                        size={16}
+                        color="white"
+                        style={{
+                          textShadowColor: "rgba(0, 0, 0, 0.5)",
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 2,
+                        }}
+                      />
+                      <Text
+                        style={{
+                          color: "white",
+                          fontSize: 14,
+                          marginLeft: 4,
+                          textShadowColor: "rgba(0, 0, 0, 0.5)",
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 2,
+                        }}
+                      >
+                        {event.time}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
+                      <Ionicons
+                        name="location-outline"
+                        size={16}
+                        color="white"
+                        style={{
+                          textShadowColor: "rgba(0, 0, 0, 0.5)",
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 2,
+                        }}
+                      />
+                      <Text
+                        style={{
+                          color: "white",
+                          fontSize: 14,
+                          marginLeft: 4,
+                          textShadowColor: "rgba(0, 0, 0, 0.5)",
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 2,
+                        }}
+                      >
+                        {event.venue.city}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginTop: 12,
+                    }}
+                  >
+                    <PriceDisplay />
+                    <AvailabilityBadge />
+                  </View>
+                </View>
+              </LinearGradient>
+            </ImageBackground>
+          </View>
+        </Pressable>
+      );
+    }
+
+    // Default variant (unchanged)
     return (
       <Pressable
         onPress={handlePress}
-        // Apply the style prop directly here.
-        style={[style]} // Removed fixed mb-4 from className
-        className="bg-white rounded-2xl overflow-hidden mb-4" // Removed mb-4
+        style={[style]}
+        className="bg-white rounded-2xl overflow-hidden shadow-md"
         android_ripple={{ color: "rgba(14, 165, 233, 0.1)" }}
       >
         <View
@@ -310,19 +460,16 @@ const EventCard = memo<EventCardProps>(
               className="flex-1"
             />
 
-            {/* Category Badge */}
             <View className="absolute top-3 left-3 bg-primary-500 rounded-full px-3 py-1">
               <Text className="text-white text-xs font-medium">
                 {event.category}
               </Text>
             </View>
 
-            {/* Like Button */}
             <View className="absolute top-3 right-3">
               <LikeButton />
             </View>
 
-            {/* Rating */}
             <View className="absolute bottom-3 right-3 bg-white/90 rounded-full px-2 py-1 flex-row items-center">
               <Ionicons name="star" size={12} color="#f59e0b" />
               <Text className="text-gray-900 text-xs font-medium ml-1">

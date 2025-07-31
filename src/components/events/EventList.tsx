@@ -61,7 +61,7 @@ const EventList = memo<EventListProps>(
     const calculateGridItemWidth = useCallback(() => {
       if (horizontal) {
         // For horizontal lists, fixed width based on variant makes sense
-        return variant === "featured" ? 280 : 200;
+        return variant === "featured" ? 260 : 200;
       }
 
       // For vertical grid:
@@ -97,9 +97,11 @@ const EventList = memo<EventListProps>(
             variant={variant}
             style={{
               width: horizontal ? itemWidth : itemWidth, // Explicitly set width for grid
-              marginBottom: isLastRow ? 0 : itemVerticalSpacing,
+              // height: horizontal ? 200 : "auto",
+              marginBottom:
+                isLastRow && effectiveNumColumns > 1 ? 36 : itemVerticalSpacing,
               marginRight:
-                horizontal || isLastColumn ? 0 : itemHorizontalSpacing,
+                horizontal || isLastColumn ? 20 : itemHorizontalSpacing,
             }}
           />
         );
@@ -174,7 +176,8 @@ const EventList = memo<EventListProps>(
         contentContainerStyle={{
           // Apply horizontal padding here for the FlatList itself
           paddingHorizontal: 20, // Example padding for the entire grid
-          paddingBottom: 20,
+          paddingBottom: 2,
+          marginBottom: effectiveNumColumns > 1 ? 0 : 0,
           // Add flexGrow: 1 and justifyContent: 'center' for ListEmptyComponent to center correctly
           flexGrow: 1,
         }}

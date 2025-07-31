@@ -1,0 +1,179 @@
+graph TB
+    %% User Interface Layer
+    subgraph "📱 Mobile Application (React Native + Expo)"
+        subgraph "🎨 Presentation Layer"
+            WS[Welcome Screen]
+            LS[Login Screen]
+            RS[Register Screen]
+            HS[Home Screen]
+            SS[Search Screen]
+            EDS[Event Details Screen]
+            BS[Booking Screen]
+            PS[Payment Screen]
+            SCS[Success Screen]
+            BOS[Bookings Screen]
+            PRS[Profile Screen]
+        end
+        
+        subgraph "🧩 UI Components"
+            BTN[Button Component]
+            INP[Input Component]
+            CRD[Card Component]
+            HDR[Header Component]
+            EVT[Event Card Component]
+            LST[Event List Component]
+            FLT[Category Filter]
+            SPN[Loading Spinner]
+        end
+        
+        subgraph "🗂️ Navigation"
+            AN[App Navigator]
+            AUN[Auth Navigator]
+            MN[Main Navigator]
+            TN[Tab Navigator]
+        end
+    end
+    
+    %% State Management Layer
+    subgraph "🏪 State Management Layer"
+        subgraph "📊 Context Providers"
+            AC[Auth Context]
+            EC[Events Context]
+            BC[Bookings Context]
+            FC[Filters Context]
+            UC[UI Context]
+        end
+        
+        subgraph "🪝 Custom Hooks"
+            UA[useAuth Hook]
+            UE[useEvents Hook]
+            UB[useBookings Hook]
+            UF[useFilters Hook]
+        end
+        
+        subgraph "🔄 State Actions"
+            AA[Auth Actions]
+            EA[Events Actions]
+            BA[Bookings Actions]
+            FA[Filter Actions]
+        end
+    end
+    
+    %% Business Logic Layer
+    subgraph "🧠 Business Logic Layer"
+        subgraph "🔧 Services"
+            AS[Auth Service]
+            ES[Events Service]
+            BS_SVC[Booking Service]
+            PS_SVC[Payment Service]
+            NS[Notification Service]
+        end
+        
+        subgraph "🛠️ Utilities"
+            VLD[Validators]
+            FMT[Formatters]
+            PFM[Performance Utils]
+            ACC[Accessibility Utils]
+        end
+        
+        subgraph "📊 Data Layer"
+            MD[Mock Data]
+            TS[Type Definitions]
+            CNS[Constants]
+        end
+    end
+    
+    %% Backend Services (Future Azure Integration)
+    subgraph "☁️ Backend Services (Future Azure)"
+        subgraph "🔐 Authentication"
+            ADB2C[Azure AD B2C]
+            JWT[JWT Tokens]
+        end
+        
+        subgraph "🗄️ Database"
+            CDB[Cosmos DB]
+            EVT_COL[Events Collection]
+            USR_COL[Users Collection]
+            BKG_COL[Bookings Collection]
+        end
+        
+        subgraph "⚡ API Layer"
+            AF[Azure Functions]
+            API_EVT[Events API]
+            API_AUTH[Auth API]
+            API_BKG[Bookings API]
+        end
+        
+        subgraph "📁 Storage"
+            BS_STOR[Blob Storage]
+            IMG[Event Images]
+            QR[QR Codes]
+        end
+        
+        subgraph "🔔 Notifications"
+            NH[Notification Hubs]
+            PUSH[Push Notifications]
+        end
+    end
+    
+    %% External Services
+    subgraph "🌐 External Services"
+        RPY[Razorpay Payment Gateway]
+        GMAPS[Google Maps API]
+        EMAIL[Email Service]
+        SMS[SMS Service]
+    end
+    
+    %% Data Flow Connections
+    %% UI to State Management
+    HS --> AC
+    SS --> EC
+    BS --> BC
+    EDS --> EC
+    
+    %% State Management to Services
+    AC --> AS
+    EC --> ES
+    BC --> BS_SVC
+    
+    %% Components to Navigation
+    WS --> AN
+    LS --> AUN
+    HS --> MN
+    
+    %% Services to Backend (Future)
+    AS --> ADB2C
+    ES --> API_EVT
+    BS_SVC --> API_BKG
+    PS_SVC --> RPY
+    
+    %% Backend Internal Connections
+    API_EVT --> CDB
+    API_AUTH --> ADB2C
+    API_BKG --> CDB
+    CDB --> EVT_COL
+    CDB --> USR_COL
+    CDB --> BKG_COL
+    
+    %% External Service Connections
+    PS_SVC --> RPY
+    EDS --> GMAPS
+    NS --> NH
+    NS --> EMAIL
+    
+    %% Current Mock Data (Development)
+    ES -.-> MD
+    BS_SVC -.-> MD
+    
+    %% Styling
+    classDef uiLayer fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef stateLayer fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef logicLayer fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef backendLayer fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef externalLayer fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+     
+    class WS,LS,RS,HS,SS,EDS,BS,PS,SCS,BOS,PRS,BTN,INP,CRD,HDR,EVT,LST,FLT,SPN,AN,AUN,MN,TN uiLayer
+    class AC,EC,BC,FC,UC,UA,UE,UB,UF,AA,EA,BA,FA stateLayer
+    class AS,ES,BS_SVC,PS_SVC,NS,VLD,FMT,PFM,ACC,MD,TS,CNS logicLayer
+    class ADB2C,JWT,CDB,EVT_COL,USR_COL,BKG_COL,AF,API_EVT,API_AUTH,API_BKG,BS_STOR,IMG,QR,NH,PUSH backendLayer
+    class RPY,GMAPS,EMAIL,SMS externalLayer

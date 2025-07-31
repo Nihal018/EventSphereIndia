@@ -271,7 +271,7 @@ const EventDetailsScreen: React.FC = () => {
           </Card>
         </View>
         <View className="bg-white border-t border-gray-100 px-5 py-4">
-          <View className="flex-row items-center justify-between ml-2">
+          <View className="flex-row items-center justify-between ml-4">
             <View>
               <Text className="text-gray-500 text-sm">Starting from</Text>
               <Text className="text-xl font-bold text-gray-900">
@@ -284,7 +284,12 @@ const EventDetailsScreen: React.FC = () => {
               onPress={handleBookNow}
               gradient
               size="lg"
-              style={{ flex: 1, marginLeft: 20 }}
+              style={{
+                flex: 1,
+                marginLeft: 36,
+                // width: "60%",
+                // alignSelf: "center",
+              }}
               disabled={event.capacity - event.bookedCount === 0}
             />
           </View>

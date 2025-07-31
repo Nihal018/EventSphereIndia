@@ -8,7 +8,15 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourname.eventsphereindia"
+      "bundleIdentifier": "com.yourname.eventsphereindia",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLName": "com.yourname.eventsphereindia",
+            "CFBundleURLSchemes": ["msauth.com.yourname.eventsphereindia"]
+          }
+        ]
+      }
     },
     "android": {
       "package": "com.yourname.eventsphereindia",
@@ -18,16 +26,32 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "INTERNET"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "msauth",
+              "host": "com.yourname.eventsphereindia",
+              "pathPrefix": "/callback"
+            }
+          ],
+          "category": ["DEFAULT", "BROWSABLE"]
+        }
       ]
     },
     "web": {
       "bundler": "metro"
     },
     "plugins": [
-      "expo-location",
+      "expo-location", 
       "expo-image-picker",
       "expo-notifications",
       "expo-font"
-    ]
+    ],
+    "developmentClient": {
+      "silentLaunch": true
+    }
   }
 }

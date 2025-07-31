@@ -139,13 +139,13 @@ const FilterModal = memo<FilterModalProps>(
               title="Clear All"
               onPress={handleClearAll} // Use local handler
               variant="outline"
-              style={{ flex: 1 }}
+              style={{ flex: 1, marginRight: 8 }}
             />
             <Button
               title="Apply"
               onPress={handleApply} // Use local handler
               gradient
-              style={{ flex: 1 }}
+              style={{ flex: 1, marginLeft: 8 }}
             />
           </View>
         </View>

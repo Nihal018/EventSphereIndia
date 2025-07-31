@@ -6,31 +6,51 @@ import React, {
   useMemo,
   useEffect,
 } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
-import { User } from "../types"; // Assuming User type is defined in ../types
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
+import { User } from "../types";
+import { msalConfig, webMsalConfig, loginRequest, tokenRequest } from "../config/azure";
+
+// Import different MSAL libraries based on platform
+let PublicClientApplication: any;
+let MSALResult: any;
+
+if (Platform.OS === 'web') {
+  // Use @azure/msal-browser for web
+  const msalBrowser = require('@azure/msal-browser');
+  PublicClientApplication = msalBrowser.PublicClientApplication;
+} else {
+  // Use react-native-msal for native platforms
+  const msalNative = require('react-native-msal');
+  PublicClientApplication = msalNative.PublicClientApplication;
+  MSALResult = msalNative.MSALResult;
+}
 
 // Auth State interface
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  authLoading: boolean; // Indicates if the initial auth check is in progress
-  authError: string | null; // To store authentication errors
+  authLoading: boolean;
+  authError: string | null;
+  accessToken: string | null;
 }
 
 // Auth Action types
 type AuthAction =
   | { type: "AUTH_START" }
-  | { type: "AUTH_SUCCESS"; payload: User }
+  | { type: "AUTH_SUCCESS"; payload: { user: User; accessToken: string } }
   | { type: "AUTH_FAILURE"; payload: string }
   | { type: "AUTH_LOGOUT" }
-  | { type: "AUTH_INITIAL_CHECK_COMPLETE" }; // New action for initial loading state
+  | { type: "AUTH_INITIAL_CHECK_COMPLETE" }
+  | { type: "TOKEN_REFRESH"; payload: string };
 
 // Initial Auth State
 const initialAuthState: AuthState = {
   user: null,
   isAuthenticated: false,
-  authLoading: true, // Set to true initially to indicate loading
+  authLoading: true,
   authError: null,
+  accessToken: null,
 };
 
 // Auth Reducer
@@ -42,7 +62,8 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
     case "AUTH_SUCCESS":
       return {
         ...state,
-        user: action.payload,
+        user: action.payload.user,
+        accessToken: action.payload.accessToken,
         isAuthenticated: true,
         authLoading: false,
         authError: null,
@@ -52,6 +73,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
       return {
         ...state,
         user: null,
+        accessToken: null,
         isAuthenticated: false,
         authLoading: false,
         authError: action.payload,
@@ -61,13 +83,17 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
       return {
         ...state,
         user: null,
+        accessToken: null,
         isAuthenticated: false,
-        authLoading: false, // No longer loading after logout
+        authLoading: false,
         authError: null,
       };
 
     case "AUTH_INITIAL_CHECK_COMPLETE":
       return { ...state, authLoading: false };
+
+    case "TOKEN_REFRESH":
+      return { ...state, accessToken: action.payload };
 
     default:
       return state;
@@ -79,13 +105,15 @@ interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
   authLoading: boolean;
-  authError: string | null; // To store authentication errors
-  dispatch: React.Dispatch<AuthAction>; // Expose dispatch for advanced use if needed
+  authError: string | null;
+  accessToken: string | null;
+  dispatch: React.Dispatch<AuthAction>;
 
   // Actions
-  login: (email: string, password: string) => Promise<void>;
-  register: (userData: any) => Promise<void>;
-  logout: () => Promise<void>; // Logout is now async due to AsyncStorage
+  login: () => Promise<void>;
+  register: () => Promise<void>;
+  logout: () => Promise<void>;
+  refreshToken: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -95,135 +123,201 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [state, dispatch] = useReducer(authReducer, initialAuthState);
+  const [pca, setPca] = React.useState<PublicClientApplication | null>(null);
 
-  // Effect to check authentication status from AsyncStorage on app start
+  // Initialize MSAL and check authentication status
   useEffect(() => {
-    const checkAuthStatus = async () => {
+    const initializeMSAL = async () => {
       try {
-        const userToken = await AsyncStorage.getItem("userToken");
-        const userDataString = await AsyncStorage.getItem("userData");
+        // Check if we're in Expo Go environment (MSAL native modules not available for native)
+        const isExpoGo = Platform.OS !== 'web' && typeof global?.expo !== 'undefined' && !global?.nativeCallSyncHook;
+        if (isExpoGo || (Platform.OS !== 'web' && __DEV__ && typeof PublicClientApplication === 'undefined')) {
+          console.log("MSAL not available in Expo Go - using mock auth for development");
+          console.log("To test real authentication, use: npx expo run:ios or npx expo run:android");
+          dispatch({ type: "AUTH_INITIAL_CHECK_COMPLETE" });
+          return;
+        }
 
-        if (userToken && userDataString) {
-          const user: User = JSON.parse(userDataString);
-          dispatch({ type: "AUTH_SUCCESS", payload: user });
+        // Use appropriate config based on platform
+        const config = Platform.OS === 'web' ? webMsalConfig : msalConfig;
+        const publicClientApp = new PublicClientApplication(config);
+        
+        if (Platform.OS !== 'web') {
+          await publicClientApp.init();
+        }
+        setPca(publicClientApp);
+
+        // Try to get accounts silently
+        const accounts = await publicClientApp.getAccounts();
+        if (accounts.length > 0) {
+          // Try to acquire token silently
+          try {
+            const result = await publicClientApp.acquireTokenSilent({
+              ...tokenRequest,
+              account: accounts[0],
+            });
+            
+            const user: User = {
+              id: result.account?.localAccountId || result.account?.homeAccountId || '',
+              email: result.account?.username || '',
+              name: result.account?.name || '',
+              preferences: [],
+              createdAt: new Date(),
+            };
+
+            dispatch({ 
+              type: "AUTH_SUCCESS", 
+              payload: { user, accessToken: result.accessToken } 
+            });
+          } catch (silentError) {
+            console.log("Silent token acquisition failed:", silentError);
+            dispatch({ type: "AUTH_LOGOUT" });
+          }
         } else {
-          dispatch({ type: "AUTH_LOGOUT" }); // Not authenticated, set state accordingly
+          dispatch({ type: "AUTH_LOGOUT" });
         }
       } catch (error) {
-        console.error(
-          "Failed to load authentication data from storage:",
-          error
-        );
-        dispatch({ type: "AUTH_FAILURE", payload: "Failed to load session." });
+        console.error("MSAL initialization failed:", error);
+        dispatch({ type: "AUTH_FAILURE", payload: "Authentication service unavailable" });
       } finally {
-        // Ensure authLoading is set to false after initial check
         dispatch({ type: "AUTH_INITIAL_CHECK_COMPLETE" });
       }
     };
 
-    checkAuthStatus();
-  }, []); // Run only once on component mount
+    initializeMSAL();
+  }, []);
 
   // Actions
-  const login = useCallback(async (email: string, password: string) => {
-    dispatch({ type: "AUTH_START" });
-    try {
-      // --- Replace with your actual API call for login ---
-      // Example:
-      // const response = await fetch('YOUR_LOGIN_API_ENDPOINT', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password })
-      // });
-      // const data = await response.json();
-      // if (!response.ok) {
-      //   throw new Error(data.message || 'Login failed');
-      // }
-      // const userToken = data.token;
-      // const userData = data.user; // Assuming your API returns user data
-      // --- End of API call example ---
-
-      // Simulate a successful login for demonstration
-      await new Promise((resolve) => setTimeout(resolve, 500));
+  const login = useCallback(async () => {
+    // Mock login for Expo Go development
+    if (__DEV__ && !pca) {
+      console.log("Using mock login for development");
+      dispatch({ type: "AUTH_START" });
+      
+      // Simulate authentication delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       const mockUser: User = {
-        id: "mock-user-123",
-        email,
+        id: "dev-user-123",
+        email: "test@eventsphereindia.com",
         name: "Test User",
-        preferences: ["Music", "Sports"],
+        preferences: [],
         createdAt: new Date(),
       };
-      const mockToken = "dummy-jwt-token-for-" + email;
+      
+      dispatch({ 
+        type: "AUTH_SUCCESS", 
+        payload: { user: mockUser, accessToken: "mock-token" } 
+      });
+      return;
+    }
 
-      // Store token and user data
-      await AsyncStorage.setItem("userToken", mockToken);
-      await AsyncStorage.setItem("userData", JSON.stringify(mockUser));
+    if (!pca) {
+      throw new Error("Authentication service not initialized");
+    }
 
-      dispatch({ type: "AUTH_SUCCESS", payload: mockUser });
+    dispatch({ type: "AUTH_START" });
+    try {
+      let result: any;
+      
+      if (Platform.OS === 'web') {
+        // Web platform uses loginPopup
+        result = await pca.loginPopup({
+          ...loginRequest,
+        });
+      } else {
+        // Native platform uses acquireToken
+        result = await pca.acquireToken({
+          ...loginRequest,
+        });
+      }
+
+      const user: User = {
+        id: result.account?.localAccountId || result.account?.homeAccountId || '',
+        email: result.account?.username || '',
+        name: result.account?.name || '',
+        preferences: [],
+        createdAt: new Date(),
+      };
+
+      // Store token and user data for offline access
+      if (Platform.OS !== 'web') {
+        await AsyncStorage.setItem("accessToken", result.accessToken);
+        await AsyncStorage.setItem("userData", JSON.stringify(user));
+      }
+
+      dispatch({ 
+        type: "AUTH_SUCCESS", 
+        payload: { user, accessToken: result.accessToken } 
+      });
     } catch (error: any) {
       console.error("Login error:", error);
       dispatch({
         type: "AUTH_FAILURE",
         payload: error.message || "Login failed",
       });
-      throw error; // Re-throw to allow component to handle
+      throw error;
     }
-  }, []);
+  }, [pca]);
 
-  const register = useCallback(async (userData: any) => {
-    dispatch({ type: "AUTH_START" });
-    try {
-      // --- Replace with your actual API call for registration ---
-      // Example:
-      // const response = await fetch('YOUR_REGISTER_API_ENDPOINT', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(userData)
-      // });
-      // const data = await response.json();
-      // if (!response.ok) {
-      //   throw new Error(data.message || 'Registration failed');
-      // }
-      // const userToken = data.token;
-      // const newUser = data.user;
-      // --- End of API call example ---
-
-      // Simulate a successful registration
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      const newUser: User = {
-        id: "mock-user-" + Date.now(),
-        email: userData.email,
-        name: userData.name,
-        preferences: [],
-        createdAt: new Date(),
-      };
-      const mockToken = "dummy-jwt-token-for-new-user";
-
-      // Store token and new user data
-      await AsyncStorage.setItem("userToken", mockToken);
-      await AsyncStorage.setItem("userData", JSON.stringify(newUser));
-
-      dispatch({ type: "AUTH_SUCCESS", payload: newUser });
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      dispatch({
-        type: "AUTH_FAILURE",
-        payload: error.message || "Registration failed",
-      });
-      throw error; // Re-throw to allow component to handle
-    }
-  }, []);
+  const register = useCallback(async () => {
+    // Microsoft Entra External ID typically handles registration through the same login flow
+    // Users register when they first sign in
+    return login();
+  }, [login]);
 
   const logout = useCallback(async () => {
     try {
-      await AsyncStorage.removeItem("userToken");
-      await AsyncStorage.removeItem("userData");
+      if (pca) {
+        const accounts = await pca.getAccounts();
+        if (accounts.length > 0) {
+          if (Platform.OS === 'web') {
+            // Web platform uses logoutPopup or logout
+            await pca.logoutPopup({
+              account: accounts[0],
+            });
+          } else {
+            // Native platform uses removeAccount
+            await pca.removeAccount(accounts[0]);
+          }
+        }
+      }
+      
+      if (Platform.OS !== 'web') {
+        await AsyncStorage.removeItem("accessToken");
+        await AsyncStorage.removeItem("userData");
+      }
       dispatch({ type: "AUTH_LOGOUT" });
     } catch (error) {
-      console.error("Failed to clear authentication data from storage:", error);
-      // Even if storage clear fails, we should still update state for immediate UX
+      console.error("Failed to logout:", error);
+      // Even if logout fails, we should still update state for immediate UX
       dispatch({ type: "AUTH_LOGOUT" });
     }
-  }, []);
+  }, [pca]);
+
+  const refreshToken = useCallback(async () => {
+    if (!pca) {
+      throw new Error("Authentication service not initialized");
+    }
+
+    try {
+      const accounts = await pca.getAccounts();
+      if (accounts.length > 0) {
+        const result = await pca.acquireTokenSilent({
+          ...tokenRequest,
+          account: accounts[0],
+        });
+        
+        dispatch({ type: "TOKEN_REFRESH", payload: result.accessToken });
+        await AsyncStorage.setItem("accessToken", result.accessToken);
+      }
+    } catch (error) {
+      console.error("Token refresh failed:", error);
+      // If refresh fails, user needs to re-authenticate
+      dispatch({ type: "AUTH_LOGOUT" });
+      throw error;
+    }
+  }, [pca]);
 
   // Memoize the context value to prevent unnecessary re-renders of consumers
   const contextValue = useMemo(
@@ -232,12 +326,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       isAuthenticated: state.isAuthenticated,
       authLoading: state.authLoading,
       authError: state.authError,
+      accessToken: state.accessToken,
       dispatch,
       login,
       register,
       logout,
+      refreshToken,
     }),
-    [state, login, register, logout]
+    [state, login, register, logout, refreshToken]
   );
 
   return (

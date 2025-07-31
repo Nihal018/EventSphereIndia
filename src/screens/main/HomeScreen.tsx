@@ -155,7 +155,7 @@ const HomeScreen: React.FC = () => {
   // Render each individual EventCard for the main FlatList
   const renderEventItem = useCallback(
     ({ item }: { item: Event }) => (
-      <View className="px-5 pb-4">
+      <View className="px-8 pb-4">
         <EventCard
           event={item}
           onPress={handleEventPress}
@@ -176,10 +176,10 @@ const HomeScreen: React.FC = () => {
         <View className="px-5 py-4">
           <View className="flex-row items-center justify-between mb-6">
             <View>
-              <Text className="text-2xl font-bold text-gray-900 ml-1">
+              <Text className="text-2xl font-bold text-gray-900 ml-4">
                 Discover Events
               </Text>
-              <Text className="text-gray-500 mt-1 ml-1">
+              <Text className="text-gray-500 mt-1 ml-4">
                 Find amazing events near you
               </Text>
             </View>
@@ -224,7 +224,7 @@ const HomeScreen: React.FC = () => {
         {featuredEvents.length > 0 && (
           <View className="mb-6">
             <View className="flex-row items-center justify-between px-5 mb-4">
-              <Text className="text-xl font-bold text-gray-900 ml-1">
+              <Text className="text-xl font-bold text-gray-900 ml-4">
                 Featured Events
               </Text>
               <TouchableOpacity
@@ -251,20 +251,20 @@ const HomeScreen: React.FC = () => {
         {/* Stats Cards */}
         <View className="px-5 mb-6">
           <View className="flex-row space-x-4">
-            <Card style={{ flex: 1 }} padding="md" className="mx-2">
+            <Card style={{ flex: 1 }} padding="md" className="mx-4">
               <View className="items-center">
                 <Ionicons name="calendar" size={24} color="#0ea5e9" />
-                <Text className="text-2xl font-bold text-gray-900 mt-2">
+                <Text className="text-2xl font-bold text-gray-900 mt-1">
                   {stats.totalEvents}
                 </Text>
                 <Text className="text-gray-500 text-sm">Events Available</Text>
               </View>
             </Card>
 
-            <Card style={{ flex: 1 }} padding="md">
+            <Card style={{ flex: 1 }} padding="md" className="mx-4">
               <View className="items-center">
                 <Ionicons name="location" size={24} color="#f37316" />
-                <Text className="text-2xl font-bold text-gray-900 mt-2">
+                <Text className="text-2xl font-bold text-gray-900 mt-1">
                   {stats.cities}
                 </Text>
                 <Text className="text-gray-500 text-sm">Cities Covered</Text>
@@ -277,7 +277,7 @@ const HomeScreen: React.FC = () => {
         {nearbyEvents.length > 0 && (
           <View className="mb-6">
             <View className="flex-row items-center justify-between px-5 mb-4">
-              <Text className="text-xl font-bold text-gray-900 ml-1">
+              <Text className="text-xl font-bold text-gray-900 ml-4">
                 Events Near You
               </Text>
               <TouchableOpacity
@@ -302,7 +302,7 @@ const HomeScreen: React.FC = () => {
         {/* All Events Header (for the list below) */}
         <View className="px-5 mb-4">
           <View className="flex-row items-center justify-between">
-            <Text className="text-xl font-bold text-gray-900 ml-1">
+            <Text className="text-xl font-bold text-gray-900 ml-4">
               {selectedCategory ? `${selectedCategory} Events` : "All Events"}
             </Text>
             <Text className="text-gray-500">{totalEvents} events</Text>
@@ -353,10 +353,17 @@ const HomeScreen: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#fafafa" }}>
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: "#fafafa",
+        }}
+      >
         <FlatList // Main vertical FlatList for 'All Events'
           data={events} // The main data source for the FlatList
           keyExtractor={(item) => item.id}
+          style={{ marginBottom: -30 }}
+          className="shadow-sm"
           renderItem={renderEventItem}
           ListHeaderComponent={renderListHeader} // All static content goes here
           ListEmptyComponent={() =>

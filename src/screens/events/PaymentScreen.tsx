@@ -347,6 +347,7 @@ const PaymentScreen: React.FC = () => {
           onPress={handlePayment}
           gradient
           size="lg"
+          style={{ width: "70%", alignSelf: "center" }}
           loading={processing}
         />
       </View>

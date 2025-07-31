@@ -50,7 +50,7 @@ export default function Card({
   // NativeWind's shadow classes include color and opacity by default.
   // 'shadow-lg' is a good general-purpose shadow.
   const getShadowClasses = () => {
-    return shadow ? "shadow-lg" : "";
+    return shadow ? "shadow-md" : "";
   };
 
   // Combine all internally generated NativeWind classes

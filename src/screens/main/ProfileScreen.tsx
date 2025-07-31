@@ -36,12 +36,11 @@ const ProfileScreen: React.FC = () => {
       edges={["left", "right", "bottom"]}
     >
       <ScrollView
-        style={{ flex: 1 }}
+        style={{ flex: 1, marginTop: 20, marginBottom: -36 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingTop: 24,
-          paddingBottom: 4,
+          paddingHorizontal: 30,
+          paddingTop: 44,
         }}
       >
         {/* Profile Header */}
@@ -175,7 +174,13 @@ const ProfileScreen: React.FC = () => {
           title="Logout"
           onPress={handleLogout}
           variant="outline"
-          style={{ borderColor: "#ef4444", width: "50%", alignSelf: "center" }}
+          style={{
+            borderColor: "#ef4444",
+            width: "50%",
+            alignSelf: "center",
+            marginTop: 8,
+            marginBottom: 22,
+          }}
           textStyle={{ color: "#ef4444" }}
           leftIcon={
             <Ionicons name="log-out-outline" size={20} color="#ef4444" />

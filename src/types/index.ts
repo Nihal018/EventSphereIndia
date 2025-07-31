@@ -48,8 +48,8 @@ export interface Venue {
   city: string;
   state: string;
   pincode: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export type EventCategory =
