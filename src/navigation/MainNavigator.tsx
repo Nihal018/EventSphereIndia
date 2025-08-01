@@ -16,6 +16,7 @@ import BookingsScreen from "../screens/main/BookingsScreen";
 import ProfileScreen from "../screens/main/ProfileScreen";
 import EventDetailsScreen from "../screens/events/EventDetailsScreen";
 import BookingScreen from "../screens/events/BookingScreen";
+import BookingDetailsScreen from "../screens/bookings/BookingDetailsScreen";
 import PaymentScreen from "../screens/events/PaymentScreen";
 import SuccessScreen from "../screens/events/SuccessScreen";
 
@@ -152,6 +153,7 @@ export default function MainNavigator() {
       <Stack.Screen name="MainTabs" component={MainTabs} />
       <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
       <Stack.Screen name="Booking" component={BookingScreen} />
+      <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
       <Stack.Screen name="Payment" component={PaymentScreen} />
       <Stack.Screen name="Success" component={SuccessScreen} />
     </Stack.Navigator>

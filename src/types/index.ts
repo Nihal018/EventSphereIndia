@@ -100,6 +100,7 @@ export type MainStackParamList = {
   MainTabs: undefined;
   EventDetails: { eventId: string };
   Booking: { eventId: string };
+  BookingDetails: { bookingId: string };
   Payment: { booking: Partial<Booking> };
   Success: { bookingId: string; eventId: string; amount: number };
 };

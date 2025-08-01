@@ -158,7 +158,7 @@ const BookingsScreen: React.FC = () => {
           <View className="flex-row space-x-2">
             <Button
               title="View Details"
-              onPress={() => handleBookingPress(booking)}
+              onPress={() => navigation.navigate("BookingDetails", { bookingId: booking.id })}
               variant="outline"
               size="sm"
             />
