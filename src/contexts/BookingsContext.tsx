@@ -27,6 +27,7 @@ type BookingsAction =
   | { type: "BOOKINGS_SUCCESS"; payload: { bookings: Booking[]; upcomingBookings: Booking[]; pastBookings: Booking[] } }
   | { type: "BOOKINGS_ERROR"; payload: string }
   | { type: "ADD_BOOKING"; payload: Booking }
+  | { type: "CANCEL_BOOKING"; payload: Booking }
   | { type: "CLEAR_BOOKINGS_ERROR" };
 
 // Initial Bookings State
@@ -86,6 +87,30 @@ const bookingsReducer = (
       };
     }
 
+    case "CANCEL_BOOKING": {
+      const updatedBookings = state.bookings.map(booking => 
+        booking.id === action.payload.id ? action.payload : booking
+      );
+      
+      // Recompute upcoming and past bookings
+      const upcomingBookings = updatedBookings.filter(booking => {
+        const eventDate = typeof booking.eventDate === 'string' ? parseISO(booking.eventDate) : booking.eventDate;
+        return eventDate >= new Date() && (booking.status === "confirmed" || booking.status === "pending");
+      });
+      
+      const pastBookings = updatedBookings.filter(booking => {
+        const eventDate = typeof booking.eventDate === 'string' ? parseISO(booking.eventDate) : booking.eventDate;
+        return eventDate < new Date() || booking.status === "cancelled";
+      });
+      
+      return {
+        ...state,
+        bookings: updatedBookings,
+        upcomingBookings,
+        pastBookings,
+      };
+    }
+
     case "CLEAR_BOOKINGS_ERROR":
       return {
         ...state,
@@ -114,6 +139,8 @@ interface BookingsContextValue {
     userDetails: { name: string; email: string; phone: string },
     ticketType?: 'general' | 'vip'
   ) => Promise<Booking | null>;
+  cancelBooking: (bookingId: string) => Promise<boolean>;
+  getBookingByIdFromApi: (bookingId: string) => Promise<{ booking: Booking; event?: any } | null>;
   refreshBookings: () => Promise<void>;
   getBookingById: (bookingId: string) => Booking | undefined;
   clearBookingsError: () => void;
@@ -214,6 +241,55 @@ export const BookingsProvider: React.FC<{ children: React.ReactNode }> = ({
     [isAuthenticated, user?.id]
   );
 
+  const cancelBooking = useCallback(
+    async (bookingId: string): Promise<boolean> => {
+      if (!isAuthenticated || !user?.id) {
+        throw new Error("User not authenticated or user data missing.");
+      }
+
+      try {
+        const response = await apiService.cancelBooking(bookingId, user.id);
+        
+        if (response.success && response.data) {
+          // Update the cancelled booking in state
+          dispatch({ type: "CANCEL_BOOKING", payload: response.data.booking });
+          return true;
+        } else {
+          throw new Error(response.error || "Failed to cancel booking");
+        }
+      } catch (error: any) {
+        console.error("Error cancelling booking:", error);
+        throw error;
+      }
+    },
+    [isAuthenticated, user?.id]
+  );
+
+  const getBookingByIdFromApi = useCallback(
+    async (bookingId: string): Promise<{ booking: Booking; event?: any } | null> => {
+      if (!isAuthenticated || !user?.id) {
+        throw new Error("User not authenticated or user data missing.");
+      }
+
+      try {
+        const response = await apiService.getBookingById(bookingId, user.id);
+        
+        if (response.success && response.data) {
+          return {
+            booking: response.data.booking,
+            event: response.data.event,
+          };
+        } else {
+          throw new Error(response.error || "Failed to fetch booking details");
+        }
+      } catch (error: any) {
+        console.error("Error fetching booking details:", error);
+        throw error;
+      }
+    },
+    [isAuthenticated, user?.id]
+  );
+
   const refreshBookings = useCallback(async () => {
     await fetchBookings();
   }, [fetchBookings]);
@@ -244,6 +320,8 @@ export const BookingsProvider: React.FC<{ children: React.ReactNode }> = ({
       dispatch,
       fetchBookings,
       createBooking,
+      cancelBooking,
+      getBookingByIdFromApi,
       refreshBookings,
       getBookingById,
       clearBookingsError,
@@ -256,6 +334,8 @@ export const BookingsProvider: React.FC<{ children: React.ReactNode }> = ({
       state.bookingsError,
       fetchBookings,
       createBooking,
+      cancelBooking,
+      getBookingByIdFromApi,
       refreshBookings,
       getBookingById,
       clearBookingsError,

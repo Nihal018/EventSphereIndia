@@ -39,6 +39,8 @@ export const API_CONFIG = {
     // Bookings
     CREATE_BOOKING: "/CreateBooking",
     GET_USER_BOOKINGS: "/GetUserBookings",
+    CANCEL_BOOKING: "/CancelBooking",
+    GET_BOOKING_BY_ID: "/GetBookingById",
 
     // Health check (if you add one)
     HEALTH: "/health",
@@ -80,6 +82,8 @@ export const AZURE_FUNCTION_URLS = {
   GET_EVENT_BY_ID: getEndpointUrl(API_CONFIG.ENDPOINTS.GET_EVENT_BY_ID),
   CREATE_BOOKING: getEndpointUrl(API_CONFIG.ENDPOINTS.CREATE_BOOKING),
   GET_USER_BOOKINGS: getEndpointUrl(API_CONFIG.ENDPOINTS.GET_USER_BOOKINGS),
+  CANCEL_BOOKING: getEndpointUrl(API_CONFIG.ENDPOINTS.CANCEL_BOOKING),
+  GET_BOOKING_BY_ID: getEndpointUrl(API_CONFIG.ENDPOINTS.GET_BOOKING_BY_ID),
   HEALTH: getEndpointUrl(API_CONFIG.ENDPOINTS.HEALTH),
 };
 

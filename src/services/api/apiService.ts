@@ -236,6 +236,24 @@ class EventSphereApiService {
     );
   }
 
+  async cancelBooking(
+    bookingId: string,
+    userId: string
+  ): Promise<ApiResponse<{ success: boolean; message: string; booking: any }>> {
+    return this.client.delete<{ success: boolean; message: string; booking: any }>(
+      `/CancelBooking?bookingId=${bookingId}&userId=${userId}`
+    );
+  }
+
+  async getBookingById(
+    bookingId: string,
+    userId: string
+  ): Promise<ApiResponse<{ success: boolean; booking: any; event?: any }>> {
+    return this.client.get<{ success: boolean; booking: any; event?: any }>(
+      `/GetBookingById?bookingId=${bookingId}&userId=${userId}`
+    );
+  }
+
   // Utility methods
   async checkApiHealth(): Promise<
     ApiResponse<{ status: string; timestamp: string }>
@@ -458,6 +476,22 @@ class EventSphereApi {
   }): Promise<ApiResponse<CreateBookingResponse>> {
     // Booking creation should only work online
     return this.onlineService.createBooking(bookingData);
+  }
+
+  async cancelBooking(
+    bookingId: string,
+    userId: string
+  ): Promise<ApiResponse<{ success: boolean; message: string; booking: any }>> {
+    // Booking cancellation should only work online
+    return this.onlineService.cancelBooking(bookingId, userId);
+  }
+
+  async getBookingById(
+    bookingId: string,
+    userId: string
+  ): Promise<ApiResponse<{ success: boolean; booking: any; event?: any }>> {
+    // Get booking details - online only for security
+    return this.onlineService.getBookingById(bookingId, userId);
   }
 
   // Utility methods
