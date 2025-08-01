@@ -29,6 +29,7 @@ const BookingsScreen: React.FC = () => {
     pastBookings,
     bookingsLoading,
     bookingsError,
+    cancelBooking,
   } = useBookings();
   const [selectedTab, setSelectedTab] = useState<"upcoming" | "past">(
     "upcoming"
@@ -47,22 +48,42 @@ const BookingsScreen: React.FC = () => {
     [navigation]
   );
 
-  const handleCancelBooking = useCallback((bookingId: string) => {
+  const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
+
+  const handleCancelBooking = useCallback((bookingId: string, eventTitle: string) => {
     Alert.alert(
       "Cancel Booking",
-      "Are you sure you want to cancel this booking?",
+      `Are you sure you want to cancel your booking for "${eventTitle}"?\n\nThis action cannot be undone.`,
       [
-        { text: "No", style: "cancel" },
+        { text: "Keep Booking", style: "cancel" },
         {
-          text: "Yes",
+          text: "Cancel Booking",
           style: "destructive",
-          onPress: () => {
-            console.log("Cancelling booking:", bookingId);
+          onPress: async () => {
+            try {
+              setCancellingBookingId(bookingId);
+              const success = await cancelBooking(bookingId);
+              if (success) {
+                Alert.alert(
+                  "Booking Cancelled",
+                  "Your booking has been successfully cancelled. Any refund will be processed according to our cancellation policy.",
+                  [{ text: "OK" }]
+                );
+              }
+            } catch (error: any) {
+              Alert.alert(
+                "Cancellation Failed",
+                error.message || "Failed to cancel booking. Please try again.",
+                [{ text: "OK" }]
+              );
+            } finally {
+              setCancellingBookingId(null);
+            }
           },
         },
       ]
     );
-  }, []);
+  }, [cancelBooking]);
 
   // Safe date formatting function
   const formatDate = (date: Date | string) => {
@@ -114,13 +135,19 @@ const BookingsScreen: React.FC = () => {
         <View className="flex-row justify-between items-center mt-4 pt-4 border-t border-gray-100">
           <View
             className={`px-3 py-1 rounded-full ${
-              booking.status === "confirmed" ? "bg-green-100" : "bg-red-100"
+              booking.status === "confirmed" 
+                ? "bg-green-100" 
+                : booking.status === "pending"
+                ? "bg-yellow-100"
+                : "bg-red-100"
             }`}
           >
             <Text
               className={`text-xs font-medium ${
                 booking.status === "confirmed"
                   ? "text-green-700"
+                  : booking.status === "pending"
+                  ? "text-yellow-700"
                   : "text-red-700"
               }`}
             >
@@ -130,17 +157,18 @@ const BookingsScreen: React.FC = () => {
 
           <View className="flex-row space-x-2">
             <Button
-              title="View Ticket"
-              onPress={() => {}}
+              title="View Details"
+              onPress={() => handleBookingPress(booking)}
               variant="outline"
               size="sm"
             />
-            {selectedTab === "upcoming" && (
+            {selectedTab === "upcoming" && booking.status !== "cancelled" && (
               <Button
-                title="Cancel"
-                onPress={() => handleCancelBooking(booking.id)}
+                title={cancellingBookingId === booking.id ? "Cancelling..." : "Cancel"}
+                onPress={() => handleCancelBooking(booking.id, booking.eventTitle)}
                 variant="ghost"
                 size="sm"
+                disabled={cancellingBookingId === booking.id}
               />
             )}
           </View>
