@@ -9,7 +9,7 @@ export interface User {
   city?: string;
   state?: string;
   preferences: EventCategory[];
-  createdAt: Date;
+  createdAt: Date | string;
 }
 
 export interface Event {
@@ -18,7 +18,7 @@ export interface Event {
   description: string;
   shortDescription: string;
   images: string[];
-  date: Date;
+  date: Date | string;
   time: string;
   venue: Venue;
   category: EventCategory;
@@ -39,7 +39,7 @@ export interface Event {
   tags: string[];
   rating: number;
   reviewCount: number;
-  createdAt: Date;
+  createdAt: Date | string;
 }
 
 export interface Venue {
@@ -70,13 +70,22 @@ export interface Booking {
   id: string;
   userId: string;
   eventId: string;
-  event: Event;
+  eventTitle: string;
+  eventDate: Date | string;
+  eventVenue: string;
   quantity: number;
   totalAmount: number;
   status: "pending" | "confirmed" | "cancelled";
-  bookingDate: Date;
+  bookingDate: Date | string;
   qrCode?: string;
   tickets: Ticket[];
+  userDetails: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 export interface Ticket {

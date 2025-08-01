@@ -4,14 +4,19 @@ import React, {
   useReducer,
   useCallback,
   useMemo,
+  useEffect,
 } from "react";
-import { Booking, Event } from "../types"; // Assuming types are in ../types
-import { useAuth } from "./AuthContext"; // Assuming you'll create this context
-import { useEvents } from "./EventsContext"; // Assuming you'll create this context
+import { parseISO } from "date-fns";
+import { Booking, Event } from "../types";
+import { useAuth } from "./AuthContext";
+import { useEvents } from "./EventsContext";
+import { apiService } from "../services/api/apiService";
 
 // Bookings State interface
 interface BookingsState {
   bookings: Booking[];
+  upcomingBookings: Booking[];
+  pastBookings: Booking[];
   bookingsLoading: boolean;
   bookingsError: string | null;
 }
@@ -19,13 +24,16 @@ interface BookingsState {
 // Bookings Action types
 type BookingsAction =
   | { type: "BOOKINGS_LOADING" }
-  | { type: "BOOKINGS_SUCCESS"; payload: Booking[] }
+  | { type: "BOOKINGS_SUCCESS"; payload: { bookings: Booking[]; upcomingBookings: Booking[]; pastBookings: Booking[] } }
   | { type: "BOOKINGS_ERROR"; payload: string }
-  | { type: "ADD_BOOKING"; payload: Booking };
+  | { type: "ADD_BOOKING"; payload: Booking }
+  | { type: "CLEAR_BOOKINGS_ERROR" };
 
 // Initial Bookings State
 const initialBookingsState: BookingsState = {
   bookings: [],
+  upcomingBookings: [],
+  pastBookings: [],
   bookingsLoading: false,
   bookingsError: null,
 };
@@ -42,7 +50,9 @@ const bookingsReducer = (
     case "BOOKINGS_SUCCESS":
       return {
         ...state,
-        bookings: action.payload,
+        bookings: action.payload.bookings,
+        upcomingBookings: action.payload.upcomingBookings,
+        pastBookings: action.payload.pastBookings,
         bookingsLoading: false,
         bookingsError: null,
       };
@@ -54,10 +64,32 @@ const bookingsReducer = (
         bookingsError: action.payload,
       };
 
-    case "ADD_BOOKING":
+    case "ADD_BOOKING": {
+      const updatedBookings = [...state.bookings, action.payload];
+      
+      // Recompute upcoming and past bookings
+      const upcomingBookings = updatedBookings.filter(booking => {
+        const eventDate = typeof booking.eventDate === 'string' ? parseISO(booking.eventDate) : booking.eventDate;
+        return eventDate >= new Date() && (booking.status === "confirmed" || booking.status === "pending");
+      });
+      
+      const pastBookings = updatedBookings.filter(booking => {
+        const eventDate = typeof booking.eventDate === 'string' ? parseISO(booking.eventDate) : booking.eventDate;
+        return eventDate < new Date() || booking.status === "cancelled";
+      });
+      
       return {
         ...state,
-        bookings: [...state.bookings, action.payload],
+        bookings: updatedBookings,
+        upcomingBookings,
+        pastBookings,
+      };
+    }
+
+    case "CLEAR_BOOKINGS_ERROR":
+      return {
+        ...state,
+        bookingsError: null,
       };
 
     default:
@@ -68,13 +100,23 @@ const bookingsReducer = (
 // Bookings Context Value interface
 interface BookingsContextValue {
   bookings: Booking[];
+  upcomingBookings: Booking[];
+  pastBookings: Booking[];
   bookingsLoading: boolean;
   bookingsError: string | null;
-  dispatch: React.Dispatch<BookingsAction>; // Expose dispatch for advanced use if needed
+  dispatch: React.Dispatch<BookingsAction>;
 
   // Actions
   fetchBookings: () => Promise<void>;
-  createBooking: (eventId: string, quantity: number) => Promise<void>;
+  createBooking: (
+    eventId: string, 
+    quantity: number, 
+    userDetails: { name: string; email: string; phone: string },
+    ticketType?: 'general' | 'vip'
+  ) => Promise<Booking | null>;
+  refreshBookings: () => Promise<void>;
+  getBookingById: (bookingId: string) => Booking | undefined;
+  clearBookingsError: () => void;
 }
 
 const BookingsContext = createContext<BookingsContextValue | undefined>(
@@ -90,73 +132,134 @@ export const BookingsProvider: React.FC<{ children: React.ReactNode }> = ({
   const { events } = useEvents(); // Access events state from EventsContext
 
   const fetchBookings = useCallback(async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user?.id) {
       console.warn("User not authenticated, cannot fetch bookings.");
-      return; // Do not proceed if not authenticated
+      return;
     }
 
     dispatch({ type: "BOOKINGS_LOADING" });
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      // In a real app, you'd fetch bookings for the current user
-      dispatch({ type: "BOOKINGS_SUCCESS", payload: [] });
-    } catch (error) {
-      dispatch({ type: "BOOKINGS_ERROR", payload: "Failed to fetch bookings" });
+      const response = await apiService.getUserBookings(user.id);
+      
+      if (response.success && response.data) {
+        const bookings = response.data.bookings || [];
+        
+        // Compute upcoming and past bookings client-side since API returns empty arrays
+        const upcomingBookings = bookings.filter(booking => {
+          const eventDate = typeof booking.eventDate === 'string' ? parseISO(booking.eventDate) : booking.eventDate;
+          return eventDate >= new Date() && (booking.status === "confirmed" || booking.status === "pending");
+        });
+        
+        const pastBookings = bookings.filter(booking => {
+          const eventDate = typeof booking.eventDate === 'string' ? parseISO(booking.eventDate) : booking.eventDate;
+          return eventDate < new Date() || booking.status === "cancelled";
+        });
+        
+        dispatch({ 
+          type: "BOOKINGS_SUCCESS", 
+          payload: {
+            bookings,
+            upcomingBookings,
+            pastBookings,
+          }
+        });
+      } else {
+        dispatch({ 
+          type: "BOOKINGS_ERROR", 
+          payload: response.error || "Failed to fetch bookings" 
+        });
+      }
+    } catch (error: any) {
+      dispatch({ 
+        type: "BOOKINGS_ERROR", 
+        payload: error.message || "Failed to fetch bookings" 
+      });
     }
-  }, [isAuthenticated]); // Dependency on isAuthenticated
+  }, [isAuthenticated, user?.id]);
 
   const createBooking = useCallback(
-    async (eventId: string, quantity: number) => {
-      if (!isAuthenticated || !user) {
+    async (
+      eventId: string, 
+      quantity: number, 
+      userDetails: { name: string; email: string; phone: string },
+      ticketType: 'general' | 'vip' = 'general'
+    ): Promise<Booking | null> => {
+      if (!isAuthenticated || !user?.id) {
         throw new Error("User not authenticated or user data missing.");
       }
 
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        const event = events.find((e) => e.id === eventId);
-        if (!event) throw new Error("Event not found");
-
-        const booking: Booking = {
-          id: Date.now().toString(),
-          userId: user.id, // Use user ID from AuthContext
+        const bookingData = {
+          userId: user.id,
           eventId,
-          event,
           quantity,
-          totalAmount: event.price.min * quantity,
-          status: "confirmed",
-          bookingDate: new Date(),
-          tickets: Array.from({ length: quantity }, (_, i) => ({
-            id: `${Date.now()}-${i}`,
-            ticketType: "general",
-            price: event.price.min,
-            qrCode: `QR-${Date.now()}-${i}`,
-          })),
+          userDetails,
+          ticketType,
         };
 
-        dispatch({ type: "ADD_BOOKING", payload: booking });
-      } catch (error) {
+        const response = await apiService.createBooking(bookingData);
+        
+        if (response.success && response.data) {
+          // Add the new booking to state
+          dispatch({ type: "ADD_BOOKING", payload: response.data.booking });
+          return response.data.booking;
+        } else {
+          throw new Error(response.error || "Failed to create booking");
+        }
+      } catch (error: any) {
         console.error("Error creating booking:", error);
-        throw error; // Re-throw to allow component to handle
+        throw error;
       }
     },
-    [isAuthenticated, user, events] // Dependencies on auth and events state
+    [isAuthenticated, user?.id]
   );
+
+  const refreshBookings = useCallback(async () => {
+    await fetchBookings();
+  }, [fetchBookings]);
+
+  const getBookingById = useCallback((bookingId: string): Booking | undefined => {
+    return state.bookings.find(booking => booking.id === bookingId);
+  }, [state.bookings]);
+
+  const clearBookingsError = useCallback(() => {
+    dispatch({ type: "CLEAR_BOOKINGS_ERROR" });
+  }, []);
+
+  // Auto-fetch bookings when user authentication changes
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
+      fetchBookings();
+    }
+  }, [isAuthenticated, user?.id, fetchBookings]);
 
   // Memoize the context value to prevent unnecessary re-renders of consumers
   const contextValue = useMemo(
     () => ({
       bookings: state.bookings,
+      upcomingBookings: state.upcomingBookings,
+      pastBookings: state.pastBookings,
       bookingsLoading: state.bookingsLoading,
       bookingsError: state.bookingsError,
-
       dispatch,
       fetchBookings,
       createBooking,
+      refreshBookings,
+      getBookingById,
+      clearBookingsError,
     }),
-    [state, fetchBookings, createBooking]
+    [
+      state.bookings,
+      state.upcomingBookings,
+      state.pastBookings,
+      state.bookingsLoading,
+      state.bookingsError,
+      fetchBookings,
+      createBooking,
+      refreshBookings,
+      getBookingById,
+      clearBookingsError,
+    ]
   );
 
   return (

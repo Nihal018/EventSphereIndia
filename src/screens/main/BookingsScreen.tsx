@@ -10,7 +10,7 @@ import Header from "../../components/common/Header";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { useBookings } from "../../contexts/BookingsContext";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -23,8 +23,13 @@ type BookingsScreenNavigationProp = CompositeNavigationProp<
 
 const BookingsScreen: React.FC = () => {
   const navigation = useNavigation<BookingsScreenNavigationProp>();
-  const { fetchBookings, bookings, bookingsLoading, bookingsError } =
-    useBookings();
+  const {
+    fetchBookings,
+    upcomingBookings,
+    pastBookings,
+    bookingsLoading,
+    bookingsError,
+  } = useBookings();
   const [selectedTab, setSelectedTab] = useState<"upcoming" | "past">(
     "upcoming"
   );
@@ -33,17 +38,7 @@ const BookingsScreen: React.FC = () => {
     fetchBookings();
   }, [fetchBookings]);
 
-  const upcomingBookings = bookings.filter(
-    (booking) =>
-      new Date(booking.event.date) >= new Date() &&
-      booking.status === "confirmed"
-  );
-
-  const pastBookings = bookings.filter(
-    (booking) =>
-      new Date(booking.event.date) < new Date() ||
-      booking.status === "cancelled"
-  );
+  // Using upcomingBookings and pastBookings from context (already filtered by API)
 
   const handleBookingPress = useCallback(
     (booking: any) => {
@@ -72,7 +67,7 @@ const BookingsScreen: React.FC = () => {
   // Safe date formatting function
   const formatDate = (date: Date | string) => {
     try {
-      const dateObj = typeof date === "string" ? new Date(date) : date;
+      const dateObj = typeof date === "string" ? parseISO(date) : date;
       if (isNaN(dateObj.getTime())) return "Date unavailable";
       return format(dateObj, "MMM dd, yyyy");
     } catch (error) {
@@ -87,18 +82,18 @@ const BookingsScreen: React.FC = () => {
           <View className="w-20 h-20 bg-gray-200 rounded-lg mr-4" />
           <View className="flex-1">
             <Text className="font-bold text-lg text-gray-900" numberOfLines={2}>
-              {booking.event.title}
+              {booking.eventTitle}
             </Text>
             <View className="flex-row items-center mt-1">
               <Ionicons name="calendar-outline" size={14} color="#6b7280" />
               <Text className="text-gray-500 text-sm ml-1">
-                {formatDate(booking.event.date)} • {booking.event.time}
+                {formatDate(booking.eventDate)}
               </Text>
             </View>
             <View className="flex-row items-center mt-1">
               <Ionicons name="location-outline" size={14} color="#6b7280" />
               <Text className="text-gray-500 text-sm ml-1">
-                {booking.event.venue.name}
+                {booking.eventVenue}
               </Text>
             </View>
             <View className="flex-row items-center justify-between mt-3">
@@ -228,8 +223,10 @@ const BookingsScreen: React.FC = () => {
 
   // Main content
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fafafa" }}>
-      <Header title="My Bookings" />
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: "#fafafa", marginBottom: -30 }}
+    >
+      {/* <Header title="My Bookings" /> */}
 
       {/* Tab Selector */}
       <View className="px-5 py-4">
@@ -297,10 +294,12 @@ const BookingsScreen: React.FC = () => {
 
       {/* Content */}
       <ScrollView
-        style={{ flex: 1 }}
+        style={{ flex: 1, backgroundColor: "#fafafa" }}
         contentContainerStyle={{
           paddingHorizontal: 20,
-          paddingBottom: 20,
+          paddingBottom: 8,
+          marginTop: 4,
+
           flexGrow: 1,
         }}
         showsVerticalScrollIndicator={false}

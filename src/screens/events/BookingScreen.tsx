@@ -8,7 +8,7 @@ import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import { Event, MainStackParamList } from "../../types";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { useAuth } from "../../contexts/AuthContext";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack/lib/typescript/src/types";
 import { useEvents } from "../../hooks/useEvents";
@@ -126,7 +126,7 @@ const BookingScreen: React.FC = () => {
               <View className="flex-row items-center mt-1">
                 <Ionicons name="calendar-outline" size={14} color="#6b7280" />
                 <Text className="text-gray-500 text-sm ml-1">
-                  {format(event.date, "MMM dd, yyyy")} • {event.time}
+                  {format(typeof event.date === 'string' ? parseISO(event.date) : event.date, "MMM dd, yyyy")} • {event.time}
                 </Text>
               </View>
               <View className="flex-row items-center mt-1">

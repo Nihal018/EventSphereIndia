@@ -15,7 +15,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEvents } from "../../hooks/useEvents";
 import Button from "../../components/common/Button";
 import Card from "../../components/common/Card";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { MainStackParamList } from "../../types";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
@@ -178,7 +178,7 @@ const EventDetailsScreen: React.FC = () => {
                 <View className="ml-4">
                   <Text className="text-gray-500 text-sm">Date & Time</Text>
                   <Text className="text-gray-900 font-semibold">
-                    {format(event.date, "EEEE, MMMM dd, yyyy")}
+                    {format(typeof event.date === 'string' ? parseISO(event.date) : event.date, "EEEE, MMMM dd, yyyy")}
                   </Text>
                   <Text className="text-gray-700">{event.time}</Text>
                 </View>

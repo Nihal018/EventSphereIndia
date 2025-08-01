@@ -9,6 +9,7 @@ import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { useBookings } from "../../contexts/BookingsContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { Booking, MainStackParamList } from "../../types";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useEvents } from "../../hooks/useEvents";
@@ -22,6 +23,7 @@ const PaymentScreen: React.FC = () => {
   const params = route.params as { booking?: Booking } | undefined;
   const booking: Booking | undefined = params?.booking;
   const { createBooking } = useBookings();
+  const { user } = useAuth();
   const { getEventById } = useEvents();
 
   const event = booking?.eventId ? getEventById(booking.eventId) : undefined;
@@ -74,7 +76,12 @@ const PaymentScreen: React.FC = () => {
       }
 
       // Create booking
-      await createBooking(booking.eventId, booking.quantity ?? 1);
+      const userDetails = {
+        name: user?.displayName || 'User',
+        email: user?.email || '',
+        phone: user?.phoneNumber || '',
+      };
+      await createBooking(booking.eventId, booking.quantity ?? 1, userDetails);
 
       // Navigate to success screen
       navigation.navigate("Success", {

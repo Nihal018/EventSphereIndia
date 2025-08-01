@@ -12,7 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Event } from "../../types";
 
 interface EventCardProps {
@@ -38,8 +38,9 @@ const EventCard = memo<EventCardProps>(
       [event.id, onLike]
     );
 
-    const formatDate = useCallback((date: Date) => {
-      return format(date, "MMM dd");
+    const formatDate = useCallback((date: Date | string) => {
+      const dateObj = typeof date === 'string' ? parseISO(date) : date;
+      return format(dateObj, "MMM dd");
     }, []);
 
     const getAvailabilityInfo = useCallback(() => {
@@ -195,24 +196,8 @@ const EventCard = memo<EventCardProps>(
       return (
         <Pressable
           onPress={handlePress}
-          style={[
-            style,
-            {
-              // iOS-specific shadow styling
-              ...Platform.select({
-                ios: {
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.15,
-                  shadowRadius: 8,
-                },
-                android: {
-                  elevation: 6,
-                },
-              }),
-            },
-          ]}
-          className="shadow-sm"
+          style={[style]}
+          className="bg-transparent"
           android_ripple={{ color: "rgba(255,255,255,0.1)" }}
         >
           <View
@@ -441,7 +426,7 @@ const EventCard = memo<EventCardProps>(
         android_ripple={{ color: "rgba(14, 165, 233, 0.1)" }}
       >
         <View
-          className="h-48 relative"
+          className="h-48 relative bg-gray-100"
           style={{
             elevation: 4,
             shadowColor: "#000",

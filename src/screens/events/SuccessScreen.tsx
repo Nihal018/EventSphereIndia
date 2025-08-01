@@ -12,7 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   MainStackParamList,
@@ -66,7 +66,7 @@ const SuccessScreen: React.FC = () => {
   const formatEventDate = (date: Date | string | undefined): string => {
     if (!date) return "N/A";
     try {
-      const dateObj = typeof date === "string" ? new Date(date) : date;
+      const dateObj = typeof date === "string" ? parseISO(date) : date;
       if (isNaN(dateObj.getTime())) return "N/A";
       return format(dateObj, "EEEE, MMMM dd, yyyy");
     } catch (error) {

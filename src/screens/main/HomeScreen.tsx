@@ -363,7 +363,7 @@ const HomeScreen: React.FC = () => {
           data={events} // The main data source for the FlatList
           keyExtractor={(item) => item.id}
           style={{ marginBottom: -30 }}
-          className="shadow-sm"
+          className="bg-gray-50"
           renderItem={renderEventItem}
           ListHeaderComponent={renderListHeader} // All static content goes here
           ListEmptyComponent={() =>

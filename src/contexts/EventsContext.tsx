@@ -5,7 +5,8 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { Event, EventCategory } from "../types"; // Assuming types are in ../types
+import { Event, EventCategory } from "../types";
+import { apiService } from "../services/api/apiService";
 
 // Events State interface
 interface EventsState {
@@ -90,15 +91,20 @@ interface EventsContextValue {
   likedEvents: string[];
   eventsLoading: boolean;
   eventsError: string | null;
-  totalEvents: number; // Exposed directly
-  dispatch: React.Dispatch<EventsAction>; // Expose dispatch for advanced use if needed
+  totalEvents: number;
+  dispatch: React.Dispatch<EventsAction>;
 
   // Actions
-  fetchEvents: () => Promise<void>;
+  fetchEvents: (filters?: { category?: EventCategory; search?: string; city?: string }) => Promise<void>;
   fetchFeaturedEvents: () => Promise<void>;
+  searchEvents: (query: string) => Promise<void>;
+  getEventsByCategory: (category: EventCategory) => Promise<void>;
+  getEventsByCity: (city: string) => Promise<void>;
+  getEventById: (eventId: string) => Promise<Event | null>;
+  refreshEvents: () => Promise<void>;
   toggleLikeEvent: (eventId: string) => void;
-  isEventLiked: (eventId: string) => boolean; // Helper function for checking like status
-  clearEventsError: () => void; // New action to clear eventsError
+  isEventLiked: (eventId: string) => boolean;
+  clearEventsError: () => void;
 }
 
 const EventsContext = createContext<EventsContextValue | undefined>(undefined);
@@ -110,12 +116,23 @@ export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({
   const [state, dispatch] = useReducer(eventsReducer, initialEventsState);
 
   // Actions
-  const fetchEvents = useCallback(async () => {
+  const fetchEvents = useCallback(async (filters?: { 
+    category?: EventCategory; 
+    search?: string; 
+    city?: string 
+  }) => {
     dispatch({ type: "EVENTS_LOADING" });
     try {
-      // Correctly import named export from mockData.js
-      const { mockEvents } = await import("../data/mockData"); // Directly destructure mockEvents
-      dispatch({ type: "EVENTS_SUCCESS", payload: mockEvents });
+      const response = await apiService.getEvents(filters);
+      
+      if (response.success && response.data) {
+        dispatch({ type: "EVENTS_SUCCESS", payload: response.data.events });
+      } else {
+        dispatch({
+          type: "EVENTS_ERROR",
+          payload: response.error || "Failed to fetch events",
+        });
+      }
     } catch (error: any) {
       dispatch({
         type: "EVENTS_ERROR",
@@ -126,23 +143,103 @@ export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchFeaturedEvents = useCallback(async () => {
     try {
-      // Correctly import named export from mockData.js
-      const { mockEvents } = await import("../data/mockData"); // Directly destructure mockEvents
-      const featured = mockEvents
-        .filter((event) => event.rating >= 4.7)
-        .slice(0, 3);
-      dispatch({ type: "FEATURED_EVENTS_SUCCESS", payload: featured });
-    } catch (error: any) {
+      const response = await apiService.getFeaturedEvents();
+      
+      if (response.success && response.data) {
+        // Take first 6 events as featured
+        const featuredEventsData = response.data.events.slice(0, 6);
+        dispatch({ type: "FEATURED_EVENTS_SUCCESS", payload: featuredEventsData });
+      }
+    } catch (error) {
       console.error("Failed to fetch featured events:", error);
-      // Optionally dispatch an error action here if you want to show it in UI
     }
   }, []);
+
+  const searchEvents = useCallback(async (query: string) => {
+    dispatch({ type: "EVENTS_LOADING" });
+    try {
+      const response = await apiService.searchEvents(query);
+      
+      if (response.success && response.data) {
+        dispatch({ type: "EVENTS_SUCCESS", payload: response.data.events });
+      } else {
+        dispatch({
+          type: "EVENTS_ERROR",
+          payload: response.error || "Failed to search events",
+        });
+      }
+    } catch (error: any) {
+      dispatch({
+        type: "EVENTS_ERROR",
+        payload: error.message || "Failed to search events",
+      });
+    }
+  }, []);
+
+  const getEventsByCategory = useCallback(async (category: EventCategory) => {
+    dispatch({ type: "EVENTS_LOADING" });
+    try {
+      const response = await apiService.getEventsByCategory(category);
+      
+      if (response.success && response.data) {
+        dispatch({ type: "EVENTS_SUCCESS", payload: response.data.events });
+      } else {
+        dispatch({
+          type: "EVENTS_ERROR",
+          payload: response.error || "Failed to fetch events by category",
+        });
+      }
+    } catch (error: any) {
+      dispatch({
+        type: "EVENTS_ERROR",
+        payload: error.message || "Failed to fetch events by category",
+      });
+    }
+  }, []);
+
+  const getEventsByCity = useCallback(async (city: string) => {
+    dispatch({ type: "EVENTS_LOADING" });
+    try {
+      const response = await apiService.getEventsByCity(city);
+      
+      if (response.success && response.data) {
+        dispatch({ type: "EVENTS_SUCCESS", payload: response.data.events });
+      } else {
+        dispatch({
+          type: "EVENTS_ERROR",
+          payload: response.error || "Failed to fetch events by city",
+        });
+      }
+    } catch (error: any) {
+      dispatch({
+        type: "EVENTS_ERROR",
+        payload: error.message || "Failed to fetch events by city",
+      });
+    }
+  }, []);
+
+  const getEventById = useCallback(async (eventId: string): Promise<Event | null> => {
+    try {
+      const response = await apiService.getEventById(eventId);
+      
+      if (response.success && response.data) {
+        return response.data.event;
+      }
+      return null;
+    } catch (error) {
+      console.error("Failed to fetch event by ID:", error);
+      return null;
+    }
+  }, []);
+
+  const refreshEvents = useCallback(async () => {
+    await fetchEvents();
+  }, [fetchEvents]);
 
   const toggleLikeEvent = useCallback((eventId: string) => {
     dispatch({ type: "TOGGLE_LIKE_EVENT", payload: eventId });
   }, []);
 
-  // Helper function to check if an event is liked
   const isEventLiked = useCallback(
     (eventId: string) => state.likedEvents.includes(eventId),
     [state.likedEvents]
@@ -160,13 +257,18 @@ export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({
       likedEvents: state.likedEvents,
       eventsLoading: state.eventsLoading,
       eventsError: state.eventsError,
-      totalEvents: state.totalEvents, // Expose totalEvents
-      dispatch, // Keep dispatch if you want to expose it
+      totalEvents: state.totalEvents,
+      dispatch,
       fetchEvents,
       fetchFeaturedEvents,
+      searchEvents,
+      getEventsByCategory,
+      getEventsByCity,
+      getEventById,
+      refreshEvents,
       toggleLikeEvent,
-      isEventLiked, // Expose isEventLiked
-      clearEventsError, // Expose clearEventsError
+      isEventLiked,
+      clearEventsError,
     }),
     [
       state.events,
@@ -175,9 +277,13 @@ export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({
       state.eventsLoading,
       state.eventsError,
       state.totalEvents,
-      dispatch, // Keep dispatch if you want to expose it
       fetchEvents,
       fetchFeaturedEvents,
+      searchEvents,
+      getEventsByCategory,
+      getEventsByCity,
+      getEventById,
+      refreshEvents,
       toggleLikeEvent,
       isEventLiked,
       clearEventsError,
