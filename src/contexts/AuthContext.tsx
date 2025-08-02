@@ -137,8 +137,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         // Check if we're in Expo Go environment (MSAL native modules not available for native)
         const isExpoGo =
           Platform.OS !== "web" &&
-          typeof global?.expo !== "undefined" &&
-          !global?.nativeCallSyncHook;
+          typeof (global as any)?.expo !== "undefined" &&
+          !(global as any)?.nativeCallSyncHook;
         if (
           isExpoGo ||
           (Platform.OS !== "web" &&

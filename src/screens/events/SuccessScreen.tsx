@@ -47,7 +47,7 @@ const SuccessScreen: React.FC = () => {
   }, []);
 
   const handleViewBookings = useCallback(() => {
-    navigation.navigate("MainTabs", { screen: "Bookings" });
+    navigation.navigate("MainTabs");
   }, [navigation]);
 
   const handleGoHome = useCallback(() => {

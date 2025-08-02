@@ -128,9 +128,9 @@ const Button: React.FC<ButtonProps> = ({
 
   // Gradient configurations
   const gradientConfigs = {
-    primary: ["#0ea5e9", "#0284c7"],
-    secondary: ["#f37316", "#e85d04"],
-    destructive: ["#ef4444", "#dc2626"],
+    primary: ["#0ea5e9", "#0284c7"] as const,
+    secondary: ["#f37316", "#e85d04"] as const,
+    destructive: ["#ef4444", "#dc2626"] as const,
   };
 
   const sizeConfig = sizeConfigs[size];

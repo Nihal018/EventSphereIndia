@@ -1,5 +1,7 @@
 import React from "react";
 import { InteractionManager } from "react-native";
+// @ts-ignore - For React Native's internal unstable_batchedUpdates
+import * as ReactNative from "react-native";
 
 /**
  * Utility to defer expensive operations until after interactions complete
@@ -103,14 +105,17 @@ export const measureRender = (componentName: string) => {
  */
 export const batchUpdates = (callback: () => void): void => {
   // Use React's unstable_batchedUpdates for better performance
-  // @ts-ignore
-  if (
-    typeof ReactNative !== "undefined" &&
-    ReactNative.unstable_batchedUpdates
-  ) {
-    // @ts-ignore
-    ReactNative.unstable_batchedUpdates(callback);
-  } else {
+  try {
+    if (
+      typeof ReactNative !== "undefined" &&
+      (ReactNative as any).unstable_batchedUpdates
+    ) {
+      (ReactNative as any).unstable_batchedUpdates(callback);
+    } else {
+      callback();
+    }
+  } catch (error) {
+    // Fallback if unstable_batchedUpdates is not available
     callback();
   }
 };

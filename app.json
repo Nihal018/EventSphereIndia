@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "assetBundlePatterns": ["**/*"],
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yourname.eventsphereindia",
@@ -52,6 +53,9 @@
     ],
     "developmentClient": {
       "silentLaunch": true
+    },
+    "experiments": {
+      "reactCanary": false
     }
   }
 }

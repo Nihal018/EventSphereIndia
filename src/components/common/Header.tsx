@@ -23,6 +23,7 @@ interface HeaderProps {
   style?: ViewStyle;
   transparent?: boolean;
   showBack?: boolean;
+  showBackButton?: boolean;
 }
 
 export default function Header({
@@ -36,6 +37,7 @@ export default function Header({
   style,
   transparent = false,
   showBack = false,
+  showBackButton = false,
 }: HeaderProps) {
   const insets = useSafeAreaInsets();
 
@@ -61,7 +63,7 @@ export default function Header({
       <View className="flex-row items-center justify-between">
         {/* Left Side */}
         <View className="flex-row items-center flex-1">
-          {(leftIcon || showBack) && (
+          {(leftIcon || showBack || showBackButton) && (
             <TouchableOpacity onPress={onLeftPress} className="mr-4 p-2 -ml-2">
               <Ionicons
                 name={leftIcon || "chevron-back"}

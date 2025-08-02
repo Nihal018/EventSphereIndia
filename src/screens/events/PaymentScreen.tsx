@@ -77,9 +77,9 @@ const PaymentScreen: React.FC = () => {
 
       // Create booking
       const userDetails = {
-        name: user?.displayName || 'User',
+        name: (user as any)?.displayName || user?.name || 'User',
         email: user?.email || '',
-        phone: user?.phoneNumber || '',
+        phone: (user as any)?.phoneNumber || user?.phone || '',
       };
       await createBooking(booking.eventId, booking.quantity ?? 1, userDetails);
 
