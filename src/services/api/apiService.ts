@@ -32,6 +32,43 @@ interface CreateBookingResponse {
   message: string;
 }
 
+interface CreateEventResponse {
+  success: boolean;
+  event: Event;
+  message: string;
+}
+
+interface UpdateEventResponse {
+  success: boolean;
+  event: Event;
+  message: string;
+}
+
+interface DeleteEventResponse {
+  success: boolean;
+  message: string;
+  eventId: string;
+  cancelledBookings: number;
+}
+
+interface OrganizerEventsResponse {
+  events: Event[];
+  pagination: {
+    offset: number;
+    limit: number;
+    totalCount: number;
+    hasMore: boolean;
+  };
+  stats: {
+    total: number;
+    active: number;
+    cancelled: number;
+    totalBookings: number;
+    totalRevenue: number;
+  };
+  organizerId: string;
+}
+
 // HTTP Client with retry logic
 class ApiClient {
   private async makeRequest<T>(
@@ -240,9 +277,11 @@ class EventSphereApiService {
     bookingId: string,
     userId: string
   ): Promise<ApiResponse<{ success: boolean; message: string; booking: any }>> {
-    return this.client.delete<{ success: boolean; message: string; booking: any }>(
-      `/CancelBooking?bookingId=${bookingId}&userId=${userId}`
-    );
+    return this.client.delete<{
+      success: boolean;
+      message: string;
+      booking: any;
+    }>(`/CancelBooking?bookingId=${bookingId}&userId=${userId}`);
   }
 
   async getBookingById(
@@ -252,6 +291,72 @@ class EventSphereApiService {
     return this.client.get<{ success: boolean; booking: any; event?: any }>(
       `/GetBookingById?bookingId=${bookingId}&userId=${userId}`
     );
+  }
+
+  // Events CRUD API
+  async createEvent(eventData: {
+    title: string;
+    description: string;
+    category: string;
+    date: string;
+    time: string;
+    venue: {
+      name: string;
+      address: string;
+      city: string;
+      state: string;
+      zipCode?: string;
+      coordinates?: { lat: number; lng: number };
+    };
+    capacity: number;
+    price: number | { min: number; max: number };
+    images?: string[];
+    organizerId: string;
+    organizerName?: string;
+    tags?: string[];
+    eventType?: string;
+    ageRestriction?: string;
+    refundPolicy?: string;
+  }): Promise<ApiResponse<CreateEventResponse>> {
+    return this.client.post<CreateEventResponse>("/CreateEvent", eventData);
+  }
+
+  async updateEvent(
+    eventId: string,
+    updates: any,
+    organizerId?: string
+  ): Promise<ApiResponse<UpdateEventResponse>> {
+    const requestBody = {
+      eventId,
+      ...updates,
+      ...(organizerId && { organizerId }),
+    };
+    return this.client.put<UpdateEventResponse>("/UpdateEvent", requestBody);
+  }
+
+  async deleteEvent(
+    eventId: string,
+    organizerId?: string
+  ): Promise<ApiResponse<DeleteEventResponse>> {
+    const params: Record<string, string> = { eventId };
+    if (organizerId) params.organizerId = organizerId;
+
+    const queryString = new URLSearchParams(params).toString();
+    return this.client.delete<DeleteEventResponse>(`/DeleteEvent?${queryString}`);
+  }
+
+  async getEventsByOrganizer(
+    organizerId: string,
+    status?: string,
+    limit?: number,
+    offset?: number
+  ): Promise<ApiResponse<OrganizerEventsResponse>> {
+    const params: Record<string, string> = { organizerId };
+    if (status) params.status = status;
+    if (limit) params.limit = limit.toString();
+    if (offset) params.offset = offset.toString();
+
+    return this.client.get<OrganizerEventsResponse>("/GetEventsByOrganizer", params);
   }
 
   // Utility methods
@@ -494,6 +599,62 @@ class EventSphereApi {
     return this.onlineService.getBookingById(bookingId, userId);
   }
 
+  // Events CRUD methods - Online only for data consistency
+  async createEvent(eventData: {
+    title: string;
+    description: string;
+    category: string;
+    date: string;
+    time: string;
+    venue: {
+      name: string;
+      address: string;
+      city: string;
+      state: string;
+      zipCode?: string;
+      coordinates?: { lat: number; lng: number };
+    };
+    capacity: number;
+    price: number | { min: number; max: number };
+    images?: string[];
+    organizerId: string;
+    organizerName?: string;
+    tags?: string[];
+    eventType?: string;
+    ageRestriction?: string;
+    refundPolicy?: string;
+  }): Promise<ApiResponse<CreateEventResponse>> {
+    // Event creation should only work online
+    return this.onlineService.createEvent(eventData);
+  }
+
+  async updateEvent(
+    eventId: string,
+    updates: any,
+    organizerId?: string
+  ): Promise<ApiResponse<UpdateEventResponse>> {
+    // Event updates should only work online
+    return this.onlineService.updateEvent(eventId, updates, organizerId);
+  }
+
+  async deleteEvent(
+    eventId: string,
+    organizerId?: string
+  ): Promise<ApiResponse<DeleteEventResponse>> {
+    // Event deletion should only work online
+    return this.onlineService.deleteEvent(eventId, organizerId);
+  }
+
+  async getEventsByOrganizer(
+    organizerId: string,
+    status?: string,
+    limit?: number,
+    offset?: number
+  ): Promise<ApiResponse<OrganizerEventsResponse>> {
+    // Organizer events should only work online for security
+    return this.onlineService.getEventsByOrganizer(organizerId, status, limit, offset);
+  }
+
   // Utility methods
   setOnlineStatus(status: boolean): void {
     this.isOnline = status;
@@ -519,4 +680,8 @@ export type {
   EventsResponse,
   BookingsResponse,
   CreateBookingResponse,
+  CreateEventResponse,
+  UpdateEventResponse,
+  DeleteEventResponse,
+  OrganizerEventsResponse,
 };

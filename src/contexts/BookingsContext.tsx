@@ -7,7 +7,7 @@ import React, {
   useEffect,
 } from "react";
 import { parseISO } from "date-fns";
-import { Booking, Event } from "../types";
+import { Booking } from "../types";
 import { useAuth } from "./AuthContext";
 import { useEvents } from "./EventsContext";
 import { apiService } from "../services/api/apiService";
@@ -24,7 +24,14 @@ interface BookingsState {
 // Bookings Action types
 type BookingsAction =
   | { type: "BOOKINGS_LOADING" }
-  | { type: "BOOKINGS_SUCCESS"; payload: { bookings: Booking[]; upcomingBookings: Booking[]; pastBookings: Booking[] } }
+  | {
+      type: "BOOKINGS_SUCCESS";
+      payload: {
+        bookings: Booking[];
+        upcomingBookings: Booking[];
+        pastBookings: Booking[];
+      };
+    }
   | { type: "BOOKINGS_ERROR"; payload: string }
   | { type: "ADD_BOOKING"; payload: Booking }
   | { type: "CANCEL_BOOKING"; payload: Booking }
@@ -67,18 +74,27 @@ const bookingsReducer = (
 
     case "ADD_BOOKING": {
       const updatedBookings = [...state.bookings, action.payload];
-      
+
       // Recompute upcoming and past bookings
-      const upcomingBookings = updatedBookings.filter(booking => {
-        const eventDate = typeof booking.eventDate === 'string' ? parseISO(booking.eventDate) : booking.eventDate;
-        return eventDate >= new Date() && (booking.status === "confirmed" || booking.status === "pending");
+      const upcomingBookings = updatedBookings.filter((booking) => {
+        const eventDate =
+          typeof booking.eventDate === "string"
+            ? parseISO(booking.eventDate)
+            : booking.eventDate;
+        return (
+          eventDate >= new Date() &&
+          (booking.status === "confirmed" || booking.status === "pending")
+        );
       });
-      
-      const pastBookings = updatedBookings.filter(booking => {
-        const eventDate = typeof booking.eventDate === 'string' ? parseISO(booking.eventDate) : booking.eventDate;
+
+      const pastBookings = updatedBookings.filter((booking) => {
+        const eventDate =
+          typeof booking.eventDate === "string"
+            ? parseISO(booking.eventDate)
+            : booking.eventDate;
         return eventDate < new Date() || booking.status === "cancelled";
       });
-      
+
       return {
         ...state,
         bookings: updatedBookings,
@@ -88,21 +104,30 @@ const bookingsReducer = (
     }
 
     case "CANCEL_BOOKING": {
-      const updatedBookings = state.bookings.map(booking => 
+      const updatedBookings = state.bookings.map((booking) =>
         booking.id === action.payload.id ? action.payload : booking
       );
-      
+
       // Recompute upcoming and past bookings
-      const upcomingBookings = updatedBookings.filter(booking => {
-        const eventDate = typeof booking.eventDate === 'string' ? parseISO(booking.eventDate) : booking.eventDate;
-        return eventDate >= new Date() && (booking.status === "confirmed" || booking.status === "pending");
+      const upcomingBookings = updatedBookings.filter((booking) => {
+        const eventDate =
+          typeof booking.eventDate === "string"
+            ? parseISO(booking.eventDate)
+            : booking.eventDate;
+        return (
+          eventDate >= new Date() &&
+          (booking.status === "confirmed" || booking.status === "pending")
+        );
       });
-      
-      const pastBookings = updatedBookings.filter(booking => {
-        const eventDate = typeof booking.eventDate === 'string' ? parseISO(booking.eventDate) : booking.eventDate;
+
+      const pastBookings = updatedBookings.filter((booking) => {
+        const eventDate =
+          typeof booking.eventDate === "string"
+            ? parseISO(booking.eventDate)
+            : booking.eventDate;
         return eventDate < new Date() || booking.status === "cancelled";
       });
-      
+
       return {
         ...state,
         bookings: updatedBookings,
@@ -134,13 +159,15 @@ interface BookingsContextValue {
   // Actions
   fetchBookings: () => Promise<void>;
   createBooking: (
-    eventId: string, 
-    quantity: number, 
+    eventId: string,
+    quantity: number,
     userDetails: { name: string; email: string; phone: string },
-    ticketType?: 'general' | 'vip'
+    ticketType?: "general" | "vip"
   ) => Promise<Booking | null>;
   cancelBooking: (bookingId: string) => Promise<boolean>;
-  getBookingByIdFromApi: (bookingId: string) => Promise<{ booking: Booking; event?: any } | null>;
+  getBookingByIdFromApi: (
+    bookingId: string
+  ) => Promise<{ booking: Booking; event?: any } | null>;
   refreshBookings: () => Promise<void>;
   getBookingById: (bookingId: string) => Booking | undefined;
   clearBookingsError: () => void;
@@ -167,49 +194,58 @@ export const BookingsProvider: React.FC<{ children: React.ReactNode }> = ({
     dispatch({ type: "BOOKINGS_LOADING" });
     try {
       const response = await apiService.getUserBookings(user.id);
-      
+
       if (response.success && response.data) {
         const bookings = response.data.bookings || [];
-        
+
         // Compute upcoming and past bookings client-side since API returns empty arrays
-        const upcomingBookings = bookings.filter(booking => {
-          const eventDate = typeof booking.eventDate === 'string' ? parseISO(booking.eventDate) : booking.eventDate;
-          return eventDate >= new Date() && (booking.status === "confirmed" || booking.status === "pending");
+        const upcomingBookings = bookings.filter((booking) => {
+          const eventDate =
+            typeof booking.eventDate === "string"
+              ? parseISO(booking.eventDate)
+              : booking.eventDate;
+          return (
+            eventDate >= new Date() &&
+            (booking.status === "confirmed" || booking.status === "pending")
+          );
         });
-        
-        const pastBookings = bookings.filter(booking => {
-          const eventDate = typeof booking.eventDate === 'string' ? parseISO(booking.eventDate) : booking.eventDate;
+
+        const pastBookings = bookings.filter((booking) => {
+          const eventDate =
+            typeof booking.eventDate === "string"
+              ? parseISO(booking.eventDate)
+              : booking.eventDate;
           return eventDate < new Date() || booking.status === "cancelled";
         });
-        
-        dispatch({ 
-          type: "BOOKINGS_SUCCESS", 
+
+        dispatch({
+          type: "BOOKINGS_SUCCESS",
           payload: {
             bookings,
             upcomingBookings,
             pastBookings,
-          }
+          },
         });
       } else {
-        dispatch({ 
-          type: "BOOKINGS_ERROR", 
-          payload: response.error || "Failed to fetch bookings" 
+        dispatch({
+          type: "BOOKINGS_ERROR",
+          payload: response.error || "Failed to fetch bookings",
         });
       }
     } catch (error: any) {
-      dispatch({ 
-        type: "BOOKINGS_ERROR", 
-        payload: error.message || "Failed to fetch bookings" 
+      dispatch({
+        type: "BOOKINGS_ERROR",
+        payload: error.message || "Failed to fetch bookings",
       });
     }
   }, [isAuthenticated, user?.id]);
 
   const createBooking = useCallback(
     async (
-      eventId: string, 
-      quantity: number, 
+      eventId: string,
+      quantity: number,
       userDetails: { name: string; email: string; phone: string },
-      ticketType: 'general' | 'vip' = 'general'
+      ticketType: "general" | "vip" = "general"
     ): Promise<Booking | null> => {
       if (!isAuthenticated || !user?.id) {
         throw new Error("User not authenticated or user data missing.");
@@ -225,7 +261,7 @@ export const BookingsProvider: React.FC<{ children: React.ReactNode }> = ({
         };
 
         const response = await apiService.createBooking(bookingData);
-        
+
         if (response.success && response.data) {
           // Add the new booking to state
           dispatch({ type: "ADD_BOOKING", payload: response.data.booking });
@@ -249,7 +285,7 @@ export const BookingsProvider: React.FC<{ children: React.ReactNode }> = ({
 
       try {
         const response = await apiService.cancelBooking(bookingId, user.id);
-        
+
         if (response.success && response.data) {
           // Update the cancelled booking in state
           dispatch({ type: "CANCEL_BOOKING", payload: response.data.booking });
@@ -266,14 +302,16 @@ export const BookingsProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const getBookingByIdFromApi = useCallback(
-    async (bookingId: string): Promise<{ booking: Booking; event?: any } | null> => {
+    async (
+      bookingId: string
+    ): Promise<{ booking: Booking; event?: any } | null> => {
       if (!isAuthenticated || !user?.id) {
         throw new Error("User not authenticated or user data missing.");
       }
 
       try {
         const response = await apiService.getBookingById(bookingId, user.id);
-        
+
         if (response.success && response.data) {
           return {
             booking: response.data.booking,
@@ -294,9 +332,12 @@ export const BookingsProvider: React.FC<{ children: React.ReactNode }> = ({
     await fetchBookings();
   }, [fetchBookings]);
 
-  const getBookingById = useCallback((bookingId: string): Booking | undefined => {
-    return state.bookings.find(booking => booking.id === bookingId);
-  }, [state.bookings]);
+  const getBookingById = useCallback(
+    (bookingId: string): Booking | undefined => {
+      return state.bookings.find((booking) => booking.id === bookingId);
+    },
+    [state.bookings]
+  );
 
   const clearBookingsError = useCallback(() => {
     dispatch({ type: "CLEAR_BOOKINGS_ERROR" });
