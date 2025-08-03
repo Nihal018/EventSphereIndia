@@ -22,6 +22,8 @@ import SuccessScreen from "../screens/events/SuccessScreen";
 import CreateEventScreen from "../screens/events/CreateEventScreen";
 import EditEventScreen from "../screens/events/EditEventScreen";
 import MyEventsScreen from "../screens/events/MyEventsScreen";
+import EditProfileScreen from "../screens/profile/EditProfileScreen";
+import UserManagementScreen from "../screens/profile/UserManagementScreen";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -162,6 +164,8 @@ export default function MainNavigator() {
       <Stack.Screen name="CreateEvent" component={CreateEventScreen} />
       <Stack.Screen name="EditEvent" component={EditEventScreen} />
       <Stack.Screen name="MyEvents" component={MyEventsScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="UserManagement" component={UserManagementScreen} />
     </Stack.Navigator>
   );
 }

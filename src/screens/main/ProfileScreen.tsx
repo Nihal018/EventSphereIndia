@@ -16,7 +16,7 @@ type ProfileScreenNavigationProp = NativeStackNavigationProp<
 >;
 
 const ProfileScreen: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, userProfile, profileLoading, logout } = useAuth();
   const navigation = useNavigation<ProfileScreenNavigationProp>();
 
   const handleLogout = useCallback(() => {
@@ -26,8 +26,14 @@ const ProfileScreen: React.FC = () => {
     ]);
   }, [logout]);
 
+  const isAdmin = userProfile?.role === "admin" || user?.email?.includes("admin");
+
   const menuItems = [
-    { icon: "person-outline", title: "Edit Profile", onPress: () => {} },
+    { 
+      icon: "person-outline", 
+      title: "Edit Profile", 
+      onPress: () => navigation.navigate('EditProfile'),
+    },
     { 
       icon: "calendar-outline", 
       title: "My Events", 
@@ -40,6 +46,11 @@ const ProfileScreen: React.FC = () => {
       onPress: () => {},
     },
     { icon: "card-outline", title: "Payment Methods", onPress: () => {} },
+    ...(isAdmin ? [{
+      icon: "people-outline",
+      title: "User Management",
+      onPress: () => navigation.navigate('UserManagement'),
+    }] : []),
     { icon: "help-circle-outline", title: "Help & Support", onPress: () => {} },
     { icon: "settings-outline", title: "Settings", onPress: () => {} },
   ];
@@ -100,11 +111,81 @@ const ProfileScreen: React.FC = () => {
           </Text>
           <Button
             title="Edit Profile"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('EditProfile')}
             variant="outline"
             size="sm"
           />
         </Card>
+
+        {/* User Stats */}
+        {userProfile?.stats && (
+          <Card style={{ marginBottom: 24 }}>
+            <Text style={{ 
+              fontSize: 18, 
+              fontWeight: "600", 
+              color: "#1f2937", 
+              marginBottom: 16 
+            }}>
+              Your Activity
+            </Text>
+            
+            <View style={{ 
+              flexDirection: "row", 
+              justifyContent: "space-around" 
+            }}>
+              <View style={{ alignItems: "center" }}>
+                <Text style={{ 
+                  fontSize: 24, 
+                  fontWeight: "bold", 
+                  color: "#0ea5e9" 
+                }}>
+                  {userProfile.stats.totalBookings || 0}
+                </Text>
+                <Text style={{ 
+                  fontSize: 12, 
+                  color: "#6b7280", 
+                  textAlign: "center" 
+                }}>
+                  Total{"\n"}Bookings
+                </Text>
+              </View>
+
+              <View style={{ alignItems: "center" }}>
+                <Text style={{ 
+                  fontSize: 24, 
+                  fontWeight: "bold", 
+                  color: "#10b981" 
+                }}>
+                  {userProfile.stats.confirmedBookings || 0}
+                </Text>
+                <Text style={{ 
+                  fontSize: 12, 
+                  color: "#6b7280", 
+                  textAlign: "center" 
+                }}>
+                  Confirmed{"\n"}Events
+                </Text>
+              </View>
+
+              <View style={{ alignItems: "center" }}>
+                <Text style={{ 
+                  fontSize: 24, 
+                  fontWeight: "bold", 
+                  color: "#f59e0b" 
+                }}>
+                  ₹{userProfile.stats.totalSpent || 0}
+                </Text>
+                <Text style={{ 
+                  fontSize: 12, 
+                  color: "#6b7280", 
+                  textAlign: "center" 
+                }}>
+                  Total{"\n"}Spent
+                </Text>
+              </View>
+            </View>
+          </Card>
+        )}
 
         {/* Menu Items */}
         <Card style={{ marginBottom: 24 }}>

@@ -69,6 +69,41 @@ interface OrganizerEventsResponse {
   organizerId: string;
 }
 
+interface CreateUserResponse {
+  success: boolean;
+  user: any;
+  message: string;
+}
+
+interface GetUserProfileResponse {
+  success: boolean;
+  user: any;
+}
+
+interface UpdateUserProfileResponse {
+  success: boolean;
+  user: any;
+  message: string;
+}
+
+interface GetUsersResponse {
+  success: boolean;
+  users: any[];
+  pagination: {
+    offset: number;
+    limit: number;
+    totalCount: number;
+    hasMore: boolean;
+  };
+  stats: {
+    totalUsers: number;
+    activeUsers: number;
+    adminUsers: number;
+    organizerUsers: number;
+    regularUsers: number;
+  };
+}
+
 // HTTP Client with retry logic
 class ApiClient {
   private async makeRequest<T>(
@@ -357,6 +392,57 @@ class EventSphereApiService {
     if (offset) params.offset = offset.toString();
 
     return this.client.get<OrganizerEventsResponse>("/geteventsbyorganizer", params);
+  }
+
+  // User Management API
+  async createUser(userData: {
+    id: string;
+    email: string;
+    name: string;
+    phone?: string;
+    avatar?: string;
+    city?: string;
+    state?: string;
+    preferences?: string[];
+    role?: string;
+  }): Promise<ApiResponse<CreateUserResponse>> {
+    return this.client.post<CreateUserResponse>("/createuser", userData);
+  }
+
+  async getUserProfile(userId: string): Promise<ApiResponse<GetUserProfileResponse>> {
+    return this.client.get<GetUserProfileResponse>(`/getuserprofile?userId=${userId}`);
+  }
+
+  async updateUserProfile(
+    userId: string,
+    updates: any
+  ): Promise<ApiResponse<UpdateUserProfileResponse>> {
+    const requestBody = {
+      userId,
+      updates,
+    };
+    return this.client.put<UpdateUserProfileResponse>("/updateuserprofile", requestBody);
+  }
+
+  async getUsers(
+    adminUserId: string,
+    options?: {
+      limit?: number;
+      offset?: number;
+      search?: string;
+      role?: string;
+      isActive?: boolean;
+    }
+  ): Promise<ApiResponse<GetUsersResponse>> {
+    const params: Record<string, string> = { adminUserId };
+    
+    if (options?.limit) params.limit = options.limit.toString();
+    if (options?.offset) params.offset = options.offset.toString();
+    if (options?.search) params.search = options.search;
+    if (options?.role) params.role = options.role;
+    if (options?.isActive !== undefined) params.isActive = options.isActive.toString();
+
+    return this.client.get<GetUsersResponse>("/getusers", params);
   }
 
   // Utility methods
@@ -655,6 +741,49 @@ class EventSphereApi {
     return this.onlineService.getEventsByOrganizer(organizerId, status, limit, offset);
   }
 
+  // User Management methods - Online only for data consistency and security
+  async createUser(userData: {
+    id: string;
+    email: string;
+    name: string;
+    phone?: string;
+    avatar?: string;
+    city?: string;
+    state?: string;
+    preferences?: string[];
+    role?: string;
+  }): Promise<ApiResponse<CreateUserResponse>> {
+    // User creation should only work online
+    return this.onlineService.createUser(userData);
+  }
+
+  async getUserProfile(userId: string): Promise<ApiResponse<GetUserProfileResponse>> {
+    // User profile should only work online for security
+    return this.onlineService.getUserProfile(userId);
+  }
+
+  async updateUserProfile(
+    userId: string,
+    updates: any
+  ): Promise<ApiResponse<UpdateUserProfileResponse>> {
+    // User profile updates should only work online
+    return this.onlineService.updateUserProfile(userId, updates);
+  }
+
+  async getUsers(
+    adminUserId: string,
+    options?: {
+      limit?: number;
+      offset?: number;
+      search?: string;
+      role?: string;
+      isActive?: boolean;
+    }
+  ): Promise<ApiResponse<GetUsersResponse>> {
+    // Admin functions should only work online for security
+    return this.onlineService.getUsers(adminUserId, options);
+  }
+
   // Utility methods
   setOnlineStatus(status: boolean): void {
     this.isOnline = status;
@@ -684,4 +813,8 @@ export type {
   UpdateEventResponse,
   DeleteEventResponse,
   OrganizerEventsResponse,
+  CreateUserResponse,
+  GetUserProfileResponse,
+  UpdateUserProfileResponse,
+  GetUsersResponse,
 };

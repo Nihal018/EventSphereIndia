@@ -107,6 +107,8 @@ export type MainStackParamList = {
   EditEvent: { eventId: string };
   MyEvents: undefined;
   EventManagement: undefined;
+  EditProfile: undefined;
+  UserManagement: undefined;
 };
 
 // RootStackParamList: Defines the top-level screens
@@ -129,4 +131,11 @@ export type MainTabParamList = {
   Search: undefined; // Search is a tab
   Bookings: undefined;
   Profile: undefined;
+};
+
+// ProfileStackParamList: Defines screens within the Profile section
+export type ProfileStackParamList = {
+  Profile: undefined;
+  EditProfile: undefined;
+  UserManagement: undefined;
 };

@@ -15,6 +15,7 @@ import {
   loginRequest,
   tokenRequest,
 } from "../config/azure";
+import { apiService } from "../services/api/apiService";
 
 // Import different MSAL libraries based on platform
 let PublicClientApplication: any;
@@ -38,6 +39,9 @@ interface AuthState {
   authLoading: boolean;
   authError: string | null;
   accessToken: string | null;
+  userProfile: any | null;
+  profileLoading: boolean;
+  profileError: string | null;
 }
 
 // Auth Action types
@@ -47,7 +51,11 @@ type AuthAction =
   | { type: "AUTH_FAILURE"; payload: string }
   | { type: "AUTH_LOGOUT" }
   | { type: "AUTH_INITIAL_CHECK_COMPLETE" }
-  | { type: "TOKEN_REFRESH"; payload: string };
+  | { type: "TOKEN_REFRESH"; payload: string }
+  | { type: "PROFILE_LOAD_START" }
+  | { type: "PROFILE_LOAD_SUCCESS"; payload: any }
+  | { type: "PROFILE_LOAD_FAILURE"; payload: string }
+  | { type: "PROFILE_UPDATE_SUCCESS"; payload: any };
 
 // Initial Auth State
 const initialAuthState: AuthState = {
@@ -56,6 +64,9 @@ const initialAuthState: AuthState = {
   authLoading: true,
   authError: null,
   accessToken: null,
+  userProfile: null,
+  profileLoading: false,
+  profileError: null,
 };
 
 // Auth Reducer
@@ -92,6 +103,9 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         isAuthenticated: false,
         authLoading: false,
         authError: null,
+        userProfile: null,
+        profileLoading: false,
+        profileError: null,
       };
 
     case "AUTH_INITIAL_CHECK_COMPLETE":
@@ -99,6 +113,31 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
 
     case "TOKEN_REFRESH":
       return { ...state, accessToken: action.payload };
+
+    case "PROFILE_LOAD_START":
+      return { ...state, profileLoading: true, profileError: null };
+
+    case "PROFILE_LOAD_SUCCESS":
+      return { 
+        ...state, 
+        userProfile: action.payload, 
+        profileLoading: false, 
+        profileError: null 
+      };
+
+    case "PROFILE_LOAD_FAILURE":
+      return { 
+        ...state, 
+        profileLoading: false, 
+        profileError: action.payload 
+      };
+
+    case "PROFILE_UPDATE_SUCCESS":
+      return { 
+        ...state, 
+        userProfile: action.payload,
+        profileError: null 
+      };
 
     default:
       return state;
@@ -112,13 +151,21 @@ interface AuthContextValue {
   authLoading: boolean;
   authError: string | null;
   accessToken: string | null;
+  userProfile: any | null;
+  profileLoading: boolean;
+  profileError: string | null;
   dispatch: React.Dispatch<AuthAction>;
 
-  // Actions
+  // Auth Actions
   login: () => Promise<void>;
   register: () => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
+
+  // User Management Actions
+  loadUserProfile: (userId: string) => Promise<void>;
+  updateUserProfile: (userId: string, updates: any) => Promise<void>;
+  createUserProfile: (userData: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -189,6 +236,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               type: "AUTH_SUCCESS",
               payload: { user, accessToken: result.accessToken },
             });
+
+            // Automatically load or create user profile after successful authentication
+            try {
+              await loadUserProfileSilently(user.id);
+            } catch (profileError) {
+              console.log("Failed to load user profile:", profileError);
+              // Attempt to create user profile if it doesn't exist
+              try {
+                await createUserProfileSilently({
+                  id: user.id,
+                  email: user.email,
+                  name: user.name,
+                  role: "user",
+                });
+              } catch (createError) {
+                console.log("Failed to create user profile:", createError);
+              }
+            }
           } catch (silentError) {
             console.log("Silent token acquisition failed:", silentError);
             dispatch({ type: "AUTH_LOGOUT" });
@@ -232,6 +297,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         type: "AUTH_SUCCESS",
         payload: { user: mockUser, accessToken: "mock-token" },
       });
+
+      // In mock mode, try to create the user in the database first
+      try {
+        await createUserProfileSilently({
+          id: mockUser.id,
+          email: mockUser.email,
+          name: mockUser.name,
+          role: "user",
+        });
+      } catch (createError) {
+        console.log("Mock user already exists or creation failed, using local mock profile");
+        // Fallback to local mock profile
+        dispatch({
+          type: "PROFILE_LOAD_SUCCESS",
+          payload: {
+            id: mockUser.id,
+            email: mockUser.email,
+            name: mockUser.name,
+            role: "user",
+            stats: {
+              totalBookings: 5,
+              confirmedBookings: 4,
+              cancelledBookings: 1,
+              pendingBookings: 0,
+              totalSpent: 2500,
+            },
+          },
+        });
+      }
       return;
     }
 
@@ -274,6 +368,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         type: "AUTH_SUCCESS",
         payload: { user, accessToken: result.accessToken },
       });
+
+      // Automatically load or create user profile after successful login
+      try {
+        await loadUserProfileSilently(user.id);
+      } catch (profileError) {
+        console.log("Failed to load user profile:", profileError);
+        // Attempt to create user profile if it doesn't exist
+        try {
+          await createUserProfileSilently({
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: "user",
+          });
+        } catch (createError) {
+          console.log("Failed to create user profile:", createError);
+        }
+      }
     } catch (error: any) {
       console.error("Login error:", error);
       dispatch({
@@ -343,6 +455,174 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [pca]);
 
+  // User Management Methods
+  const loadUserProfileSilently = useCallback(async (userId: string) => {
+    try {
+      const response = await apiService.getUserProfile(userId);
+      if (response.success && response.data) {
+        dispatch({
+          type: "PROFILE_LOAD_SUCCESS",
+          payload: response.data.user,
+        });
+      } else {
+        throw new Error(response.error || "Failed to load user profile");
+      }
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  const createUserProfileSilently = useCallback(async (userData: any) => {
+    try {
+      const response = await apiService.createUser(userData);
+      if (response.success && response.data) {
+        dispatch({
+          type: "PROFILE_LOAD_SUCCESS",
+          payload: response.data.user,
+        });
+      } else {
+        throw new Error(response.error || "Failed to create user profile");
+      }
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  const loadUserProfile = useCallback(async (userId: string) => {
+    dispatch({ type: "PROFILE_LOAD_START" });
+    try {
+      const response = await apiService.getUserProfile(userId);
+      if (response.success && response.data) {
+        dispatch({
+          type: "PROFILE_LOAD_SUCCESS",
+          payload: response.data.user,
+        });
+      } else {
+        // If it's the mock user and profile doesn't exist, try to create it
+        if (__DEV__ && userId === "dev-user-123") {
+          console.log("Mock user profile not found, attempting to create it");
+          try {
+            const createResponse = await apiService.createUser({
+              id: userId,
+              email: "test@eventsphereindia.com",
+              name: "Test User",
+              role: "user",
+            });
+            
+            if (createResponse.success && createResponse.data) {
+              dispatch({
+                type: "PROFILE_LOAD_SUCCESS",
+                payload: createResponse.data.user,
+              });
+            } else {
+              dispatch({
+                type: "PROFILE_LOAD_FAILURE",
+                payload: response.error || "Failed to load user profile",
+              });
+            }
+          } catch (createError) {
+            dispatch({
+              type: "PROFILE_LOAD_FAILURE",
+              payload: response.error || "Failed to load user profile",
+            });
+          }
+        } else {
+          dispatch({
+            type: "PROFILE_LOAD_FAILURE",
+            payload: response.error || "Failed to load user profile",
+          });
+        }
+      }
+    } catch (error: any) {
+      dispatch({
+        type: "PROFILE_LOAD_FAILURE",
+        payload: error.message || "Failed to load user profile",
+      });
+    }
+  }, []);
+
+  const updateUserProfile = useCallback(async (userId: string, updates: any) => {
+    try {
+      // In development mode with mock user, try to create user first if update fails
+      if (__DEV__ && userId === "dev-user-123") {
+        try {
+          const response = await apiService.updateUserProfile(userId, updates);
+          if (response.success && response.data) {
+            dispatch({
+              type: "PROFILE_UPDATE_SUCCESS",
+              payload: response.data.user,
+            });
+            return;
+          }
+        } catch (updateError) {
+          // If update fails, try to create the user first
+          console.log("Update failed, trying to create mock user in database");
+          try {
+            await apiService.createUser({
+              id: userId,
+              email: "test@eventsphereindia.com",
+              name: "Test User",
+              role: "user",
+              ...updates,
+            });
+            
+            // Now try to update again
+            const retryResponse = await apiService.updateUserProfile(userId, updates);
+            if (retryResponse.success && retryResponse.data) {
+              dispatch({
+                type: "PROFILE_UPDATE_SUCCESS",
+                payload: retryResponse.data.user,
+              });
+              return;
+            }
+          } catch (createError) {
+            console.log("Failed to create mock user:", createError);
+          }
+        }
+      }
+
+      const response = await apiService.updateUserProfile(userId, updates);
+      if (response.success && response.data) {
+        dispatch({
+          type: "PROFILE_UPDATE_SUCCESS",
+          payload: response.data.user,
+        });
+      } else {
+        dispatch({
+          type: "PROFILE_LOAD_FAILURE",
+          payload: response.error || "Failed to update user profile",
+        });
+      }
+    } catch (error: any) {
+      dispatch({
+        type: "PROFILE_LOAD_FAILURE",
+        payload: error.message || "Failed to update user profile",
+      });
+    }
+  }, []);
+
+  const createUserProfile = useCallback(async (userData: any) => {
+    try {
+      const response = await apiService.createUser(userData);
+      if (response.success && response.data) {
+        dispatch({
+          type: "PROFILE_LOAD_SUCCESS",
+          payload: response.data.user,
+        });
+      } else {
+        dispatch({
+          type: "PROFILE_LOAD_FAILURE",
+          payload: response.error || "Failed to create user profile",
+        });
+      }
+    } catch (error: any) {
+      dispatch({
+        type: "PROFILE_LOAD_FAILURE",
+        payload: error.message || "Failed to create user profile",
+      });
+    }
+  }, []);
+
   // Memoize the context value to prevent unnecessary re-renders of consumers
   const contextValue = useMemo(
     () => ({
@@ -351,13 +631,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       authLoading: state.authLoading,
       authError: state.authError,
       accessToken: state.accessToken,
+      userProfile: state.userProfile,
+      profileLoading: state.profileLoading,
+      profileError: state.profileError,
       dispatch,
       login,
       register,
       logout,
       refreshToken,
+      loadUserProfile,
+      updateUserProfile,
+      createUserProfile,
     }),
-    [state, login, register, logout, refreshToken]
+    [state, login, register, logout, refreshToken, loadUserProfile, updateUserProfile, createUserProfile]
   );
 
   return (
