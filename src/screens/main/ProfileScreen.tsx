@@ -2,13 +2,22 @@ import React, { useCallback } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Header from "../../components/common/Header";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import { useAuth } from "../../contexts/AuthContext";
+import { MainStackParamList } from "../../types";
+
+type ProfileScreenNavigationProp = NativeStackNavigationProp<
+  MainStackParamList,
+  'MainTabs'
+>;
 
 const ProfileScreen: React.FC = () => {
   const { user, logout } = useAuth();
+  const navigation = useNavigation<ProfileScreenNavigationProp>();
 
   const handleLogout = useCallback(() => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -19,6 +28,11 @@ const ProfileScreen: React.FC = () => {
 
   const menuItems = [
     { icon: "person-outline", title: "Edit Profile", onPress: () => {} },
+    { 
+      icon: "calendar-outline", 
+      title: "My Events", 
+      onPress: () => navigation.navigate('MyEvents'),
+    },
     { icon: "heart-outline", title: "Favorite Events", onPress: () => {} },
     {
       icon: "notifications-outline",

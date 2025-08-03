@@ -19,6 +19,9 @@ import BookingScreen from "../screens/events/BookingScreen";
 import BookingDetailsScreen from "../screens/bookings/BookingDetailsScreen";
 import PaymentScreen from "../screens/events/PaymentScreen";
 import SuccessScreen from "../screens/events/SuccessScreen";
+import CreateEventScreen from "../screens/events/CreateEventScreen";
+import EditEventScreen from "../screens/events/EditEventScreen";
+import MyEventsScreen from "../screens/events/MyEventsScreen";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -156,6 +159,9 @@ export default function MainNavigator() {
       <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
       <Stack.Screen name="Payment" component={PaymentScreen} />
       <Stack.Screen name="Success" component={SuccessScreen} />
+      <Stack.Screen name="CreateEvent" component={CreateEventScreen} />
+      <Stack.Screen name="EditEvent" component={EditEventScreen} />
+      <Stack.Screen name="MyEvents" component={MyEventsScreen} />
     </Stack.Navigator>
   );
 }

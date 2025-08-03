@@ -103,6 +103,10 @@ export type MainStackParamList = {
   BookingDetails: { bookingId: string };
   Payment: { booking: Partial<Booking> };
   Success: { bookingId: string; eventId: string; amount: number };
+  CreateEvent: undefined;
+  EditEvent: { eventId: string };
+  MyEvents: undefined;
+  EventManagement: undefined;
 };
 
 // RootStackParamList: Defines the top-level screens

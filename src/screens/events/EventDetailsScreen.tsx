@@ -12,11 +12,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useEvents } from "../../hooks/useEvents";
+import { useEvents } from "../../contexts/EventsContext";
 import Button from "../../components/common/Button";
 import Card from "../../components/common/Card";
 import { format, parseISO } from "date-fns";
-import { MainStackParamList } from "../../types";
+import { MainStackParamList, Event } from "../../types";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -27,10 +27,24 @@ const EventDetailsScreen: React.FC = () => {
   const navigation = useNavigation<EventDetailsScreenNavigationProp>();
   const route = useRoute();
   const { eventId } = route.params as { eventId: string };
-  const { getEventById, isEventLiked, toggleLikeEvent } = useEvents();
+  const { getEventById, isEventLiked, toggleLikeEvent, events } = useEvents();
   const [selectedImage, setSelectedImage] = useState(0);
+  const [event, setEvent] = useState<Event | null>(null);
 
-  const event = getEventById(eventId);
+  // Find event in current events list or fetch it
+  React.useEffect(() => {
+    const foundEvent = events.find(e => e.id === eventId);
+    if (foundEvent) {
+      setEvent(foundEvent);
+    } else {
+      // If not found in current list, try to fetch it
+      getEventById(eventId).then(fetchedEvent => {
+        if (fetchedEvent) {
+          setEvent(fetchedEvent);
+        }
+      });
+    }
+  }, [eventId, events, getEventById]);
 
   const handleBack = useCallback(() => {
     navigation.goBack();
@@ -43,10 +57,12 @@ const EventDetailsScreen: React.FC = () => {
   }, [navigation, event]);
 
   const handleGetDirections = useCallback(() => {
-    if (event) {
+    if (event && event.venue) {
       const { latitude, longitude } = event.venue;
-      const url = `https://maps.google.com/?q=${latitude},${longitude}`;
-      Linking.openURL(url);
+      if (latitude && longitude) {
+        const url = `https://maps.google.com/?q=${latitude},${longitude}`;
+        Linking.openURL(url);
+      }
     }
   }, [event]);
 
@@ -70,7 +86,7 @@ const EventDetailsScreen: React.FC = () => {
         {/* Header Image */}
         <View className="h-80 relative">
           <ImageBackground
-            source={{ uri: event.images[selectedImage] }}
+            source={{ uri: event?.images?.[selectedImage] || 'https://via.placeholder.com/400x300' }}
             className="flex-1"
             resizeMode="cover"
           >
@@ -89,13 +105,13 @@ const EventDetailsScreen: React.FC = () => {
 
                 <View className="flex-row space-x-14">
                   <TouchableOpacity
-                    onPress={() => toggleLikeEvent(event.id)}
+                    onPress={() => event?.id && toggleLikeEvent(event.id)}
                     className="bg-gray-100 rounded-full p-2 mr-2 hover:opacity-90"
                   >
                     <Ionicons
-                      name={isEventLiked(event.id) ? "heart" : "heart-outline"}
+                      name={event?.id && isEventLiked(event.id) ? "heart" : "heart-outline"}
                       size={24}
-                      color={isEventLiked(event.id) ? "#ef4444" : "#1f2937"}
+                      color={event?.id && isEventLiked(event.id) ? "#ef4444" : "#1f2937"}
                     />
                   </TouchableOpacity>
 
@@ -109,10 +125,10 @@ const EventDetailsScreen: React.FC = () => {
               </View>
 
               {/* Image Indicators */}
-              {event.images.length > 1 && (
+              {(event?.images?.length || 0) > 1 && (
                 <View className="absolute bottom-4 left-0 right-0">
                   <View className="flex-row justify-center space-x-2">
-                    {event.images.map((_, index) => (
+                    {event?.images?.map((_: string, index: number) => (
                       <TouchableOpacity
                         key={index}
                         onPress={() => setSelectedImage(index)}
@@ -134,34 +150,34 @@ const EventDetailsScreen: React.FC = () => {
             <View className="flex-row items-start justify-between mb-3">
               <View className="flex-1 mr-4">
                 <Text className="text-2xl font-bold text-gray-900 mb-2">
-                  {event.title}
+                  {event?.title || 'Event Title'}
                 </Text>
                 <View className="flex-row items-center">
                   <View className="bg-primary-100 px-3 py-1 rounded-full mr-2">
                     <Text className="text-primary-700 text-sm font-medium">
-                      {event.category}
+                      {event?.category || 'Category'}
                     </Text>
                   </View>
                   <View className="flex-row items-center">
                     <Ionicons name="star" size={16} color="#f59e0b" />
                     <Text className="text-gray-600 ml-1">
-                      {event.rating} ({event.reviewCount} reviews)
+                      {event?.rating || 0} ({event?.reviewCount || 0} reviews)
                     </Text>
                   </View>
                 </View>
               </View>
 
               <View className="items-end">
-                {event.isFree ? (
+                {event?.isFree ? (
                   <Text className="text-2xl font-bold text-primary-500">
                     Free
                   </Text>
                 ) : (
                   <>
                     <Text className="text-2xl font-bold text-gray-900">
-                      ₹{event.price.min.toLocaleString()}
+                      ₹{event?.price?.min?.toLocaleString() || '0'}
                     </Text>
-                    {event.price.max > event.price.min && (
+                    {(event?.price?.max || 0) > (event?.price?.min || 0) && (
                       <Text className="text-gray-500">onwards</Text>
                     )}
                   </>
@@ -178,9 +194,9 @@ const EventDetailsScreen: React.FC = () => {
                 <View className="ml-4">
                   <Text className="text-gray-500 text-sm">Date & Time</Text>
                   <Text className="text-gray-900 font-semibold">
-                    {format(typeof event.date === 'string' ? parseISO(event.date) : event.date, "EEEE, MMMM dd, yyyy")}
+                    {event?.date ? format(typeof event.date === 'string' ? parseISO(event.date) : event.date, "EEEE, MMMM dd, yyyy") : 'Date not set'}
                   </Text>
-                  <Text className="text-gray-700">{event.time}</Text>
+                  <Text className="text-gray-700">{event?.time || 'Time not set'}</Text>
                 </View>
               </View>
             </Card>
@@ -191,10 +207,10 @@ const EventDetailsScreen: React.FC = () => {
                 <View className="ml-4 flex-1">
                   <Text className="text-gray-500 text-sm">Location</Text>
                   <Text className="text-gray-900 font-semibold">
-                    {event.venue.name}
+                    {event?.venue?.name || 'Venue not specified'}
                   </Text>
                   <Text className="text-gray-700">
-                    {event.venue.address}, {event.venue.city}
+                    {event?.venue?.address || ''}{event?.venue?.address && event?.venue?.city ? ', ' : ''}{event?.venue?.city || ''}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -214,7 +230,7 @@ const EventDetailsScreen: React.FC = () => {
                 <View className="ml-4">
                   <Text className="text-gray-500 text-sm">Organizer</Text>
                   <Text className="text-gray-900 font-semibold">
-                    {event.organizer.name}
+                    {event?.organizer?.name || 'Organizer not specified'}
                   </Text>
                 </View>
               </View>
@@ -226,15 +242,15 @@ const EventDetailsScreen: React.FC = () => {
             <Text className="text-lg font-bold text-gray-900 mb-3">
               About This Event
             </Text>
-            <Text className="text-gray-700 leading-6">{event.description}</Text>
+            <Text className="text-gray-700 leading-6">{event?.description || 'No description available'}</Text>
           </Card>
 
           {/* Tags */}
-          {event.tags.length > 0 && (
+          {(event?.tags?.length || 0) > 0 && (
             <Card className="mb-6">
               <Text className="text-lg font-bold text-gray-900 mb-3">Tags</Text>
               <View className="flex-row flex-wrap gap-2">
-                {event.tags.map((tag, index) => (
+                {event?.tags?.map((tag: string, index: number) => (
                   <View
                     key={index}
                     className="bg-gray-100 px-3 py-1 rounded-full"
@@ -255,13 +271,13 @@ const EventDetailsScreen: React.FC = () => {
               <View>
                 <Text className="text-gray-500 text-sm">Tickets Available</Text>
                 <Text className="text-gray-900 font-semibold">
-                  {event.capacity - event.bookedCount} of {event.capacity}
+                  {(event?.capacity || 0) - (event?.bookedCount || 0)} of {event?.capacity || 0}
                 </Text>
               </View>
               <View className="bg-green-100 px-3 py-1 rounded-full">
                 <Text className="text-green-700 text-sm font-medium">
                   {Math.round(
-                    ((event.capacity - event.bookedCount) / event.capacity) *
+                    (((event?.capacity || 0) - (event?.bookedCount || 0)) / (event?.capacity || 1)) *
                       100
                   )}
                   % Available
@@ -275,7 +291,7 @@ const EventDetailsScreen: React.FC = () => {
             <View>
               <Text className="text-gray-500 text-sm">Starting from</Text>
               <Text className="text-xl font-bold text-gray-900">
-                {event.isFree ? "Free" : `₹${event.price.min.toLocaleString()}`}
+                {event?.isFree ? "Free" : `₹${event?.price?.min?.toLocaleString() || '0'}`}
               </Text>
             </View>
 
@@ -290,7 +306,7 @@ const EventDetailsScreen: React.FC = () => {
                 // width: "60%",
                 // alignSelf: "center",
               }}
-              disabled={event.capacity - event.bookedCount === 0}
+              disabled={(event?.capacity || 0) - (event?.bookedCount || 0) === 0}
             />
           </View>
         </View>

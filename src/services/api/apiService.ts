@@ -281,7 +281,7 @@ class EventSphereApiService {
       success: boolean;
       message: string;
       booking: any;
-    }>(`/CancelBooking?bookingId=${bookingId}&userId=${userId}`);
+    }>(`/cancelbooking?bookingId=${bookingId}&userId=${userId}`);
   }
 
   async getBookingById(
@@ -289,7 +289,7 @@ class EventSphereApiService {
     userId: string
   ): Promise<ApiResponse<{ success: boolean; booking: any; event?: any }>> {
     return this.client.get<{ success: boolean; booking: any; event?: any }>(
-      `/GetBookingById?bookingId=${bookingId}&userId=${userId}`
+      `/getbookingbyid?bookingId=${bookingId}&userId=${userId}`
     );
   }
 
@@ -318,7 +318,7 @@ class EventSphereApiService {
     ageRestriction?: string;
     refundPolicy?: string;
   }): Promise<ApiResponse<CreateEventResponse>> {
-    return this.client.post<CreateEventResponse>("/CreateEvent", eventData);
+    return this.client.post<CreateEventResponse>("/createevent", eventData);
   }
 
   async updateEvent(
@@ -331,7 +331,7 @@ class EventSphereApiService {
       ...updates,
       ...(organizerId && { organizerId }),
     };
-    return this.client.put<UpdateEventResponse>("/UpdateEvent", requestBody);
+    return this.client.put<UpdateEventResponse>("/updateevent", requestBody);
   }
 
   async deleteEvent(
@@ -342,7 +342,7 @@ class EventSphereApiService {
     if (organizerId) params.organizerId = organizerId;
 
     const queryString = new URLSearchParams(params).toString();
-    return this.client.delete<DeleteEventResponse>(`/DeleteEvent?${queryString}`);
+    return this.client.delete<DeleteEventResponse>(`/deleteevent?${queryString}`);
   }
 
   async getEventsByOrganizer(
@@ -356,7 +356,7 @@ class EventSphereApiService {
     if (limit) params.limit = limit.toString();
     if (offset) params.offset = offset.toString();
 
-    return this.client.get<OrganizerEventsResponse>("/GetEventsByOrganizer", params);
+    return this.client.get<OrganizerEventsResponse>("/geteventsbyorganizer", params);
   }
 
   // Utility methods
