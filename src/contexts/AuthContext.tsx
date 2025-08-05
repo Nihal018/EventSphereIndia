@@ -248,7 +248,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                   id: user.id,
                   email: user.email,
                   name: user.name,
-                  role: "user",
+                  role: "admin",
                 });
               } catch (createError) {
                 console.log("Failed to create user profile:", createError);
@@ -286,9 +286,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const mockUser: User = {
-        id: "dev-user-123",
-        email: "test@eventsphereindia.com",
-        name: "Test User",
+        id: "dev-admin-123",
+        email: "testadmin@eventsphereindia.com",
+        name: "Test Admin",
         preferences: [],
         createdAt: new Date(),
       };
@@ -304,7 +304,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           id: mockUser.id,
           email: mockUser.email,
           name: mockUser.name,
-          role: "user",
+          role: "admin",
         });
       } catch (createError) {
         console.log("Mock user already exists or creation failed, using local mock profile");
@@ -315,7 +315,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             id: mockUser.id,
             email: mockUser.email,
             name: mockUser.name,
-            role: "user",
+            role: "admin",
             stats: {
               totalBookings: 5,
               confirmedBookings: 4,
@@ -380,7 +380,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             id: user.id,
             email: user.email,
             name: user.name,
-            role: "user",
+            role: "admin",
           });
         } catch (createError) {
           console.log("Failed to create user profile:", createError);
@@ -506,7 +506,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               id: userId,
               email: "test@eventsphereindia.com",
               name: "Test User",
-              role: "user",
+              role: "admin",
             });
             
             if (createResponse.success && createResponse.data) {
@@ -562,7 +562,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               id: userId,
               email: "test@eventsphereindia.com",
               name: "Test User",
-              role: "user",
+              role: "admin",
               ...updates,
             });
             

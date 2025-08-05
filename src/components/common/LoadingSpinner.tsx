@@ -28,7 +28,18 @@ export default function LoadingSpinner({
 
   if (overlay) {
     return (
-      <View className="absolute inset-0 bg-white/90 z-50">
+      <View style={{ 
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        backgroundColor: 'rgba(255, 255, 255, 0.9)', 
+        zIndex: 50,
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
         <SpinnerContent />
       </View>
     );

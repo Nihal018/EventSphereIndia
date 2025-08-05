@@ -50,21 +50,28 @@ export default function Header({
     <View
       style={[
         {
-          // If transparent, we need to account for status bar.
-          // Otherwise, SafeAreaView on the screen handles it, and we just add regular top padding.
           paddingTop: transparent ? headerPaddingTop + 10 : 10,
           paddingBottom: 15,
           paddingHorizontal: 20,
+          backgroundColor: transparent ? "transparent" : "#ffffff",
+          borderBottomWidth: transparent ? 0 : 1,
+          borderBottomColor: transparent ? "transparent" : "#f3f4f6",
         },
         style,
       ]}
-      className={transparent ? "" : "bg-white border-b border-gray-100"}
     >
-      <View className="flex-row items-center justify-between">
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         {/* Left Side */}
-        <View className="flex-row items-center flex-1">
+        <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
           {(leftIcon || showBack || showBackButton) && (
-            <TouchableOpacity onPress={onLeftPress} className="mr-4 p-2 -ml-2">
+            <TouchableOpacity 
+              onPress={onLeftPress} 
+              style={{
+                marginRight: 16,
+                padding: 8,
+                marginLeft: -8,
+              }}
+            >
               <Ionicons
                 name={leftIcon || "chevron-back"}
                 size={24}
@@ -73,20 +80,23 @@ export default function Header({
             </TouchableOpacity>
           )}
 
-          <View className="flex-1">
+          <View style={{ flex: 1 }}>
             <Text
-              className={`text-lg font-bold ${
-                transparent ? "text-white" : "text-gray-900"
-              }`}
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: transparent ? "#ffffff" : "#1f2937",
+              }}
               numberOfLines={1}
             >
               {title}
             </Text>
             {subtitle && (
               <Text
-                className={`text-sm ${
-                  transparent ? "text-white/80" : "text-gray-500"
-                }`}
+                style={{
+                  fontSize: 14,
+                  color: transparent ? "#ffffff80" : "#6b7280",
+                }}
                 numberOfLines={1}
               >
                 {subtitle}
@@ -97,7 +107,13 @@ export default function Header({
 
         {/* Right Side */}
         {rightIcon && (
-          <TouchableOpacity onPress={onRightPress} className="p-2 -mr-2">
+          <TouchableOpacity 
+            onPress={onRightPress} 
+            style={{
+              padding: 8,
+              marginRight: -8,
+            }}
+          >
             <Ionicons
               name={rightIcon}
               size={24}

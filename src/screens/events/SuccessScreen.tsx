@@ -47,7 +47,7 @@ const SuccessScreen: React.FC = () => {
   }, []);
 
   const handleViewBookings = useCallback(() => {
-    navigation.navigate("MainTabs");
+    navigation.navigate("MainTabs", { screen: "Bookings" });
   }, [navigation]);
 
   const handleGoHome = useCallback(() => {
@@ -290,23 +290,23 @@ const SuccessScreen: React.FC = () => {
           borderTopWidth: 1,
           borderTopColor: "#e5e7eb",
           paddingHorizontal: 20,
-          paddingVertical: 16,
-          paddingBottom: 32,
+          paddingVertical: 8,
+          paddingBottom: 26,
         }}
       >
-        <View className="flex-row space-x-3">
+        <View className="flex-row space-x-3 py-2 mx-1">
           <Button
-            title="View My Bookings"
+            title="My Bookings"
             onPress={handleViewBookings}
             variant="outline"
-            style={{ flex: 1 }}
+            style={{ flex: 1, marginRight: 8, height: 48 }}
           />
 
           <Button
             title="Explore More Events"
             onPress={handleGoHome}
             gradient
-            style={{ flex: 1 }}
+            style={{ flex: 1, marginLeft: 8 }}
           />
         </View>
       </View>

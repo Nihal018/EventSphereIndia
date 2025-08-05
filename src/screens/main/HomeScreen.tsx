@@ -67,7 +67,37 @@ const HomeScreen: React.FC = () => {
     clearEventsError,
   } = useEvents();
 
-  const nearbyEvents = useMemo(() => events.slice(0, 3), [events]);
+  // Filter events based on selected category and search query
+  const filteredEvents = useMemo(() => {
+    let filtered = events;
+
+    // Filter by category
+    if (selectedCategory) {
+      filtered = filtered.filter(
+        (event) =>
+          event.category.toLowerCase() === selectedCategory.toLowerCase()
+      );
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (event) =>
+          event.title.toLowerCase().includes(query) ||
+          event.venue.city.toLowerCase().includes(query) ||
+          event.category.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [events, selectedCategory, searchQuery]);
+
+  const nearbyEvents = useMemo(
+    () => filteredEvents.slice(0, 3),
+    [filteredEvents]
+  );
+  const fewEvents = useMemo(() => filteredEvents.slice(0, 4), [filteredEvents]);
 
   // Initialize data on mount
   useEffect(() => {
@@ -143,13 +173,13 @@ const HomeScreen: React.FC = () => {
     [toggleLikeEvent]
   );
 
-  // Memoized stats
+  // Memoized stats - use filtered events for display
   const stats = useMemo(
     () => ({
-      totalEvents: totalEvents,
-      cities: new Set(events.map((event) => event.venue.city)).size,
+      totalEvents: filteredEvents.length,
+      cities: new Set(filteredEvents.map((event) => event.venue.city)).size,
     }),
-    [events, totalEvents]
+    [filteredEvents]
   );
 
   // Render each individual EventCard for the main FlatList
@@ -174,7 +204,7 @@ const HomeScreen: React.FC = () => {
       <View>
         {/* Header */}
         <View className="px-5 py-4">
-          <View className="flex-row items-center justify-between mb-6">
+          <View className="flex-row items-center justify-between mb-2">
             <View>
               <Text className="text-2xl font-bold text-gray-900 ml-4">
                 Discover Events
@@ -196,18 +226,19 @@ const HomeScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Search Bar */}
+          {/* Search Bar
           <SearchBar
             value={searchQuery}
             onChangeText={handleSearchQueryChange}
             onSearch={handleSearchPress}
             onFilter={handleFilterPress}
             placeholder="Search events, venues, or cities"
-          />
+          /> */}
         </View>
 
         {/* Category Filter */}
         <CategoryFilter
+          style={{ marginBottom: 8, marginHorizontal: 10 }}
           categories={categories}
           selectedCategory={selectedCategory}
           onCategorySelect={handleCategorySelect}
@@ -248,7 +279,7 @@ const HomeScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Stats Cards */}
+        {/* Stats Cards
         <View className="px-5 mb-6">
           <View className="flex-row space-x-4">
             <Card style={{ flex: 1 }} padding="md" className="mx-4">
@@ -271,14 +302,14 @@ const HomeScreen: React.FC = () => {
               </View>
             </Card>
           </View>
-        </View>
+        </View> */}
 
         {/* Nearby Events (uses horizontal EventList) */}
         {nearbyEvents.length > 0 && (
           <View className="mb-6">
             <View className="flex-row items-center justify-between px-5 mb-4">
               <Text className="text-xl font-bold text-gray-900 ml-4">
-                Events Near You
+                {"Events Near You"}
               </Text>
               <TouchableOpacity
                 accessibilityLabel="View all nearby events"
@@ -305,7 +336,9 @@ const HomeScreen: React.FC = () => {
             <Text className="text-xl font-bold text-gray-900 ml-4">
               {selectedCategory ? `${selectedCategory} Events` : "All Events"}
             </Text>
-            <Text className="text-gray-500">{totalEvents} events</Text>
+            <Text className="text-gray-500">
+              {filteredEvents.length} events
+            </Text>
           </View>
         </View>
       </View>
@@ -326,7 +359,7 @@ const HomeScreen: React.FC = () => {
       stats.totalEvents,
       stats.cities,
       nearbyEvents,
-      totalEvents,
+      filteredEvents,
     ]
   );
 
@@ -360,7 +393,7 @@ const HomeScreen: React.FC = () => {
         }}
       >
         <FlatList // Main vertical FlatList for 'All Events'
-          data={events} // The main data source for the FlatList
+          data={fewEvents} // The main data source for the FlatList
           keyExtractor={(item) => item.id}
           style={{ marginBottom: -30 }}
           className="bg-gray-50"
@@ -389,7 +422,7 @@ const HomeScreen: React.FC = () => {
           }
           // Optimization props for FlatList
           removeClippedSubviews={true}
-          maxToRenderPerBatch={10}
+          maxToRenderPerBatch={8}
           updateCellsBatchingPeriod={50}
           initialNumToRender={10}
           windowSize={10}

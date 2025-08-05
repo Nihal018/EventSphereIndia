@@ -33,12 +33,12 @@ const EventDetailsScreen: React.FC = () => {
 
   // Find event in current events list or fetch it
   React.useEffect(() => {
-    const foundEvent = events.find(e => e.id === eventId);
+    const foundEvent = events.find((e) => e.id === eventId);
     if (foundEvent) {
       setEvent(foundEvent);
     } else {
       // If not found in current list, try to fetch it
-      getEventById(eventId).then(fetchedEvent => {
+      getEventById(eventId).then((fetchedEvent) => {
         if (fetchedEvent) {
           setEvent(fetchedEvent);
         }
@@ -86,7 +86,11 @@ const EventDetailsScreen: React.FC = () => {
         {/* Header Image */}
         <View className="h-80 relative">
           <ImageBackground
-            source={{ uri: event?.images?.[selectedImage] || 'https://via.placeholder.com/400x300' }}
+            source={{
+              uri:
+                event?.images?.[selectedImage] ||
+                "https://via.placeholder.com/400x300",
+            }}
             className="flex-1"
             resizeMode="cover"
           >
@@ -103,21 +107,29 @@ const EventDetailsScreen: React.FC = () => {
                   <Ionicons name="chevron-back" size={24} color="#1f2937" />
                 </TouchableOpacity>
 
-                <View className="flex-row space-x-14">
+                <View className="flex-row space-x-3">
                   <TouchableOpacity
                     onPress={() => event?.id && toggleLikeEvent(event.id)}
-                    className="bg-gray-100 rounded-full p-2 mr-2 hover:opacity-90"
+                    className="bg-white/90 rounded-full p-2 shadow-sm"
                   >
                     <Ionicons
-                      name={event?.id && isEventLiked(event.id) ? "heart" : "heart-outline"}
+                      name={
+                        event?.id && isEventLiked(event.id)
+                          ? "heart"
+                          : "heart-outline"
+                      }
                       size={24}
-                      color={event?.id && isEventLiked(event.id) ? "#ef4444" : "#1f2937"}
+                      color={
+                        event?.id && isEventLiked(event.id)
+                          ? "#ef4444"
+                          : "#1f2937"
+                      }
                     />
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={handleShare}
-                    className="bg-gray-100 rounded-full p-2 hover:opacity-90 ml-1"
+                    className="bg-white/90 rounded-full p-2 shadow-sm"
                   >
                     <Ionicons name="share-outline" size={24} color="#1f2937" />
                   </TouchableOpacity>
@@ -150,12 +162,12 @@ const EventDetailsScreen: React.FC = () => {
             <View className="flex-row items-start justify-between mb-3">
               <View className="flex-1 mr-4">
                 <Text className="text-2xl font-bold text-gray-900 mb-2">
-                  {event?.title || 'Event Title'}
+                  {event?.title || "Event Title"}
                 </Text>
                 <View className="flex-row items-center">
                   <View className="bg-primary-100 px-3 py-1 rounded-full mr-2">
                     <Text className="text-primary-700 text-sm font-medium">
-                      {event?.category || 'Category'}
+                      {event?.category || "Category"}
                     </Text>
                   </View>
                   <View className="flex-row items-center">
@@ -175,7 +187,7 @@ const EventDetailsScreen: React.FC = () => {
                 ) : (
                   <>
                     <Text className="text-2xl font-bold text-gray-900">
-                      ₹{event?.price?.min?.toLocaleString() || '0'}
+                      ₹{event?.price?.min?.toLocaleString() || "0"}
                     </Text>
                     {(event?.price?.max || 0) > (event?.price?.min || 0) && (
                       <Text className="text-gray-500">onwards</Text>
@@ -194,9 +206,18 @@ const EventDetailsScreen: React.FC = () => {
                 <View className="ml-4">
                   <Text className="text-gray-500 text-sm">Date & Time</Text>
                   <Text className="text-gray-900 font-semibold">
-                    {event?.date ? format(typeof event.date === 'string' ? parseISO(event.date) : event.date, "EEEE, MMMM dd, yyyy") : 'Date not set'}
+                    {event?.date
+                      ? format(
+                          typeof event.date === "string"
+                            ? parseISO(event.date)
+                            : event.date,
+                          "EEEE, MMMM dd, yyyy"
+                        )
+                      : "Date not set"}
                   </Text>
-                  <Text className="text-gray-700">{event?.time || 'Time not set'}</Text>
+                  <Text className="text-gray-700">
+                    {event?.time || "Time not set"}
+                  </Text>
                 </View>
               </View>
             </Card>
@@ -207,10 +228,12 @@ const EventDetailsScreen: React.FC = () => {
                 <View className="ml-4 flex-1">
                   <Text className="text-gray-500 text-sm">Location</Text>
                   <Text className="text-gray-900 font-semibold">
-                    {event?.venue?.name || 'Venue not specified'}
+                    {event?.venue?.name || "Venue not specified"}
                   </Text>
                   <Text className="text-gray-700">
-                    {event?.venue?.address || ''}{event?.venue?.address && event?.venue?.city ? ', ' : ''}{event?.venue?.city || ''}
+                    {event?.venue?.address || ""}
+                    {event?.venue?.address && event?.venue?.city ? ", " : ""}
+                    {event?.venue?.city || ""}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -230,7 +253,7 @@ const EventDetailsScreen: React.FC = () => {
                 <View className="ml-4">
                   <Text className="text-gray-500 text-sm">Organizer</Text>
                   <Text className="text-gray-900 font-semibold">
-                    {event?.organizer?.name || 'Organizer not specified'}
+                    {event?.organizer?.name || "Organizer not specified"}
                   </Text>
                 </View>
               </View>
@@ -242,7 +265,9 @@ const EventDetailsScreen: React.FC = () => {
             <Text className="text-lg font-bold text-gray-900 mb-3">
               About This Event
             </Text>
-            <Text className="text-gray-700 leading-6">{event?.description || 'No description available'}</Text>
+            <Text className="text-gray-700 leading-6">
+              {event?.description || "No description available"}
+            </Text>
           </Card>
 
           {/* Tags */}
@@ -271,13 +296,15 @@ const EventDetailsScreen: React.FC = () => {
               <View>
                 <Text className="text-gray-500 text-sm">Tickets Available</Text>
                 <Text className="text-gray-900 font-semibold">
-                  {(event?.capacity || 0) - (event?.bookedCount || 0)} of {event?.capacity || 0}
+                  {(event?.capacity || 0) - (event?.bookedCount || 0)} of{" "}
+                  {event?.capacity || 0}
                 </Text>
               </View>
               <View className="bg-green-100 px-3 py-1 rounded-full">
                 <Text className="text-green-700 text-sm font-medium">
                   {Math.round(
-                    (((event?.capacity || 0) - (event?.bookedCount || 0)) / (event?.capacity || 1)) *
+                    (((event?.capacity || 0) - (event?.bookedCount || 0)) /
+                      (event?.capacity || 1)) *
                       100
                   )}
                   % Available
@@ -291,7 +318,9 @@ const EventDetailsScreen: React.FC = () => {
             <View>
               <Text className="text-gray-500 text-sm">Starting from</Text>
               <Text className="text-xl font-bold text-gray-900">
-                {event?.isFree ? "Free" : `₹${event?.price?.min?.toLocaleString() || '0'}`}
+                {event?.isFree
+                  ? "Free"
+                  : `₹${event?.price?.min?.toLocaleString() || "0"}`}
               </Text>
             </View>
 
@@ -306,7 +335,9 @@ const EventDetailsScreen: React.FC = () => {
                 // width: "60%",
                 // alignSelf: "center",
               }}
-              disabled={(event?.capacity || 0) - (event?.bookedCount || 0) === 0}
+              disabled={
+                (event?.capacity || 0) - (event?.bookedCount || 0) === 0
+              }
             />
           </View>
         </View>

@@ -122,7 +122,10 @@ const SearchScreen: React.FC = () => {
   }, [clearFilters]);
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView
+      className="flex-1 bg-background "
+      style={{ paddingBottom: -15 }}
+    >
       {/* <Header
         style={{ height: 60 }}
         title="Search Events"
@@ -177,7 +180,7 @@ const SearchScreen: React.FC = () => {
         numColumns={2}
         onEventPress={handleEventPress}
         onLike={toggleLikeEvent}
-        style={{ paddingHorizontal: 0 }}
+        style={{ marginBottom: -30 }}
         isLiked={isEventLiked}
         emptyMessage="No events found matching your search"
       />

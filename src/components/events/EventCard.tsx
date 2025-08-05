@@ -87,61 +87,78 @@ const EventCard = memo<EventCardProps>(
       </Pressable>
     ));
 
-    const PriceDisplay = memo(() => (
-      <View>
-        {event.isFree ? (
-          <Text
-            className={`font-bold ${
-              variant === "featured"
-                ? "text-white text-lg"
-                : "text-primary-500 text-lg"
-            }`}
-          >
-            Free
-          </Text>
-        ) : (
-          <Text
-            className={`font-bold ${
-              variant === "featured"
-                ? "text-white text-lg"
-                : "text-gray-900 text-lg"
-            }`}
-          >
-            ₹{event.price.min.toLocaleString()}
-            {event.price.max > event.price.min && (
-              <Text
-                className={`text-sm font-normal ${
-                  variant === "featured" ? "text-white/80" : "text-gray-500"
-                }`}
-              >
-                {" "}
-                onwards
-              </Text>
-            )}
-          </Text>
-        )}
-      </View>
-    ));
+    const PriceDisplay = memo(() => {
+      const isFeatured = variant === "featured";
+      const isDefault = variant === "default";
+      
+      return (
+        <View>
+          {event.isFree ? (
+            <Text
+              className={`font-bold ${
+                isFeatured
+                  ? "text-white text-lg"
+                  : isDefault
+                  ? "text-primary-500 text-sm"
+                  : "text-primary-500 text-lg"
+              }`}
+            >
+              Free
+            </Text>
+          ) : (
+            <Text
+              className={`font-bold ${
+                isFeatured
+                  ? "text-white text-lg"
+                  : isDefault
+                  ? "text-gray-900 text-sm"
+                  : "text-gray-900 text-lg"
+              }`}
+            >
+              ₹{event.price.min.toLocaleString()}
+              {event.price.max > event.price.min && (
+                <Text
+                  className={`text-xs font-normal ${
+                    isFeatured ? "text-white/80" : "text-gray-500"
+                  }`}
+                >
+                  {isDefault ? "+" : " onwards"}
+                </Text>
+              )}
+            </Text>
+          )}
+        </View>
+      );
+    });
 
-    const AvailabilityBadge = memo(() => (
-      <View
-        className={`px-2 py-1 rounded-full ${
-          variant === "featured" ? "px-3" : ""
-        }`}
-        style={{ backgroundColor: `${availabilityColor}20` }}
-      >
-        <Text
-          className={`text-xs font-medium ${
-            variant === "featured" ? "text-white" : ""
+    const AvailabilityBadge = memo(() => {
+      const isFeatured = variant === "featured";
+      const isDefault = variant === "default";
+      
+      return (
+        <View
+          className={`rounded-full ${
+            isFeatured ? "px-3 py-1" : isDefault ? "px-1.5 py-0.5" : "px-2 py-1"
           }`}
-          style={{
-            color: variant === "featured" ? "white" : availabilityColor,
-          }}
+          style={{ backgroundColor: `${availabilityColor}${isFeatured ? "20" : "15"}` }}
         >
-          {availabilityText}
-        </Text>
-      </View>
-    ));
+          <Text
+            className={`font-medium ${
+              isFeatured ? "text-xs text-white" : isDefault ? "text-xs" : "text-xs"
+            }`}
+            style={{
+              color: isFeatured ? "white" : availabilityColor,
+              fontSize: isDefault ? 10 : 12,
+            }}
+          >
+            {isDefault && availabilityText.includes(" left") 
+              ? availabilityText.replace(" left", "")
+              : availabilityText
+            }
+          </Text>
+        </View>
+      );
+    });
 
     // Compact variant (unchanged)
     if (variant === "compact") {
@@ -417,46 +434,49 @@ const EventCard = memo<EventCardProps>(
       );
     }
 
-    // Default variant (unchanged)
+    // Optimized Default variant for grid layout
     return (
       <Pressable
         onPress={handlePress}
         style={[style]}
-        className="bg-white rounded-2xl overflow-hidden shadow-md"
+        className="bg-white rounded-2xl overflow-hidden"
         android_ripple={{ color: "rgba(14, 165, 233, 0.1)" }}
       >
         <View
-          className="h-48 relative bg-gray-100"
           style={{
-            elevation: 4,
+            // Responsive height based on screen width for better grid aspect ratio
+            height: style?.width ? (style.width as number) * 0.75 : 160,
+            backgroundColor: "#f3f4f6",
+            elevation: 2,
             shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.08,
+            shadowRadius: 3,
           }}
         >
           <ImageBackground
             source={{ uri: event.images[0] }}
             className="flex-1"
             resizeMode="cover"
+            imageStyle={{ borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
           >
             <LinearGradient
-              colors={["transparent", "rgba(0,0,0,0.3)"]}
+              colors={["transparent", "rgba(0,0,0,0.4)"]}
               className="flex-1"
             />
 
-            <View className="absolute top-3 left-3 bg-primary-500 rounded-full px-3 py-1">
+            <View className="absolute top-2 left-2 bg-primary-500 rounded-lg px-2 py-1">
               <Text className="text-white text-xs font-medium">
                 {event.category}
               </Text>
             </View>
 
-            <View className="absolute top-3 right-3">
+            <View className="absolute top-2 right-2">
               <LikeButton />
             </View>
 
-            <View className="absolute bottom-3 right-3 bg-white/90 rounded-full px-2 py-1 flex-row items-center">
-              <Ionicons name="star" size={12} color="#f59e0b" />
+            <View className="absolute bottom-2 right-2 bg-white/95 rounded-lg px-2 py-1 flex-row items-center">
+              <Ionicons name="star" size={11} color="#f59e0b" />
               <Text className="text-gray-900 text-xs font-medium ml-1">
                 {event.rating}
               </Text>
@@ -464,30 +484,33 @@ const EventCard = memo<EventCardProps>(
           </ImageBackground>
         </View>
 
-        <View className="p-4">
+        <View className="p-3" style={{ minHeight: 120 }}>
           <Text
-            className="text-gray-900 font-bold text-lg mb-2"
+            className="text-gray-900 font-bold text-base leading-tight mb-2"
             numberOfLines={2}
+            style={{ fontSize: 15, lineHeight: 18 }}
           >
             {event.title}
           </Text>
 
-          <View className="flex-row items-center mb-2">
-            <Ionicons name="calendar-outline" size={16} color="#6b7280" />
-            <Text className="text-gray-500 text-sm ml-2">
+          <View className="flex-row items-center mb-1.5">
+            <Ionicons name="calendar-outline" size={13} color="#6b7280" />
+            <Text className="text-gray-500 text-xs ml-1.5 flex-1" numberOfLines={1}>
               {formatDate(event.date)} • {event.time}
             </Text>
           </View>
 
-          <View className="flex-row items-center mb-3">
-            <Ionicons name="location-outline" size={16} color="#6b7280" />
-            <Text className="text-gray-500 text-sm ml-2" numberOfLines={1}>
-              {event.venue.name}, {event.venue.city}
+          <View className="flex-row items-center mb-2.5">
+            <Ionicons name="location-outline" size={13} color="#6b7280" />
+            <Text className="text-gray-500 text-xs ml-1.5 flex-1" numberOfLines={1}>
+              {event.venue.city}
             </Text>
           </View>
 
-          <View className="flex-row items-center justify-between">
-            <PriceDisplay />
+          <View className="flex-row items-center justify-between mt-auto">
+            <View className="flex-1 mr-2">
+              <PriceDisplay />
+            </View>
             <AvailabilityBadge />
           </View>
         </View>

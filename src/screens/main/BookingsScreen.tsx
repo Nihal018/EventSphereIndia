@@ -48,42 +48,48 @@ const BookingsScreen: React.FC = () => {
     [navigation]
   );
 
-  const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
+  const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(
+    null
+  );
 
-  const handleCancelBooking = useCallback((bookingId: string, eventTitle: string) => {
-    Alert.alert(
-      "Cancel Booking",
-      `Are you sure you want to cancel your booking for "${eventTitle}"?\n\nThis action cannot be undone.`,
-      [
-        { text: "Keep Booking", style: "cancel" },
-        {
-          text: "Cancel Booking",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setCancellingBookingId(bookingId);
-              const success = await cancelBooking(bookingId);
-              if (success) {
+  const handleCancelBooking = useCallback(
+    (bookingId: string, eventTitle: string) => {
+      Alert.alert(
+        "Cancel Booking",
+        `Are you sure you want to cancel your booking for "${eventTitle}"?\n\nThis action cannot be undone.`,
+        [
+          { text: "Keep Booking", style: "cancel" },
+          {
+            text: "Cancel Booking",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                setCancellingBookingId(bookingId);
+                const success = await cancelBooking(bookingId);
+                if (success) {
+                  Alert.alert(
+                    "Booking Cancelled",
+                    "Your booking has been successfully cancelled. Any refund will be processed according to our cancellation policy.",
+                    [{ text: "OK" }]
+                  );
+                }
+              } catch (error: any) {
                 Alert.alert(
-                  "Booking Cancelled",
-                  "Your booking has been successfully cancelled. Any refund will be processed according to our cancellation policy.",
+                  "Cancellation Failed",
+                  error.message ||
+                    "Failed to cancel booking. Please try again.",
                   [{ text: "OK" }]
                 );
+              } finally {
+                setCancellingBookingId(null);
               }
-            } catch (error: any) {
-              Alert.alert(
-                "Cancellation Failed",
-                error.message || "Failed to cancel booking. Please try again.",
-                [{ text: "OK" }]
-              );
-            } finally {
-              setCancellingBookingId(null);
-            }
+            },
           },
-        },
-      ]
-    );
-  }, [cancelBooking]);
+        ]
+      );
+    },
+    [cancelBooking]
+  );
 
   // Safe date formatting function
   const formatDate = (date: Date | string) => {
@@ -97,75 +103,178 @@ const BookingsScreen: React.FC = () => {
   };
 
   const BookingCard = ({ booking }: { booking: any }) => (
-    <Card className="mb-4">
+    <View
+      style={{
+        backgroundColor: "#ffffff",
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+      }}
+    >
       <TouchableOpacity onPress={() => handleBookingPress(booking)}>
-        <View className="flex-row">
-          <View className="w-20 h-20 bg-gray-200 rounded-lg mr-4" />
-          <View className="flex-1">
-            <Text className="font-bold text-lg text-gray-900" numberOfLines={2}>
+        {/* Main Content Row */}
+        <View style={{ flexDirection: "row", marginBottom: 16 }}>
+          {/* Event Image Placeholder */}
+          <View
+            style={{
+              width: 80,
+              height: 80,
+              backgroundColor: "#e5e7eb",
+              borderRadius: 8,
+              marginRight: 16,
+              flexShrink: 0,
+            }}
+          />
+
+          {/* Event Details */}
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "bold",
+                color: "#111827",
+                marginBottom: 8,
+                lineHeight: 22,
+              }}
+              numberOfLines={2}
+            >
               {booking.eventTitle}
             </Text>
-            <View className="flex-row items-center mt-1">
-              <Ionicons name="calendar-outline" size={14} color="#6b7280" />
-              <Text className="text-gray-500 text-sm ml-1">
+
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 6,
+              }}
+            >
+              <Ionicons name="calendar-outline" size={16} color="#6b7280" />
+              <Text style={{ color: "#6b7280", fontSize: 14, marginLeft: 6 }}>
                 {formatDate(booking.eventDate)}
               </Text>
             </View>
-            <View className="flex-row items-center mt-1">
-              <Ionicons name="location-outline" size={14} color="#6b7280" />
-              <Text className="text-gray-500 text-sm ml-1">
+
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="location-outline" size={16} color="#6b7280" />
+              <Text
+                style={{
+                  color: "#6b7280",
+                  fontSize: 14,
+                  marginLeft: 6,
+                  flex: 1,
+                }}
+                numberOfLines={1}
+              >
                 {booking.eventVenue}
               </Text>
-            </View>
-            <View className="flex-row items-center justify-between mt-3">
-              <View>
-                <Text className="text-xs text-gray-400">Booking ID</Text>
-                <Text className="text-sm font-medium">#{booking.id}</Text>
-              </View>
-              <View className="items-end">
-                <Text className="text-xs text-gray-400">Total</Text>
-                <Text className="text-lg font-bold text-gray-900">
-                  ₹{booking.totalAmount.toLocaleString()}
-                </Text>
-              </View>
             </View>
           </View>
         </View>
 
-        <View className="flex-row justify-between items-center mt-4 pt-4 border-t border-gray-100">
+        {/* Booking Info Row */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 16,
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 12, color: "#9ca3af", marginBottom: 2 }}>
+              Booking ID
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "500",
+                color: "#374151",
+                marginRight: 100,
+              }}
+            >
+              #{booking.id}
+            </Text>
+          </View>
+
+          <View style={{ alignItems: "flex-end" }}>
+            <Text style={{ fontSize: 12, color: "#9ca3af", marginBottom: 2 }}>
+              Total Amount
+            </Text>
+            <Text
+              style={{ fontSize: 18, fontWeight: "bold", color: "#111827" }}
+            >
+              ₹{booking.totalAmount.toLocaleString()}
+            </Text>
+          </View>
+        </View>
+
+        {/* Status and Actions Row */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            paddingTop: 16,
+            borderTopWidth: 1,
+            borderTopColor: "#f3f4f6",
+          }}
+        >
+          {/* Status Badge */}
           <View
-            className={`px-3 py-1 rounded-full ${
-              booking.status === "confirmed" 
-                ? "bg-green-100" 
-                : booking.status === "pending"
-                ? "bg-yellow-100"
-                : "bg-red-100"
-            }`}
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 20,
+              backgroundColor:
+                booking.status === "confirmed"
+                  ? "#dcfce7"
+                  : booking.status === "pending"
+                  ? "#fef3c7"
+                  : "#fecaca",
+            }}
           >
             <Text
-              className={`text-xs font-medium ${
-                booking.status === "confirmed"
-                  ? "text-green-700"
-                  : booking.status === "pending"
-                  ? "text-yellow-700"
-                  : "text-red-700"
-              }`}
+              style={{
+                fontSize: 12,
+                fontWeight: "600",
+                color:
+                  booking.status === "confirmed"
+                    ? "#15803d"
+                    : booking.status === "pending"
+                    ? "#a16207"
+                    : "#dc2626",
+              }}
             >
               {booking.status.toUpperCase()}
             </Text>
           </View>
 
-          <View className="flex-row space-x-2">
+          {/* Action Buttons */}
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Button
               title="View Details"
-              onPress={() => navigation.navigate("BookingDetails", { bookingId: booking.id })}
+              onPress={() =>
+                navigation.navigate("BookingDetails", { bookingId: booking.id })
+              }
               variant="outline"
               size="sm"
+              style={{ marginRight: 8 }}
             />
             {selectedTab === "upcoming" && booking.status !== "cancelled" && (
               <Button
-                title={cancellingBookingId === booking.id ? "Cancelling..." : "Cancel"}
-                onPress={() => handleCancelBooking(booking.id, booking.eventTitle)}
+                title={
+                  cancellingBookingId === booking.id
+                    ? "Cancelling..."
+                    : "Cancel"
+                }
+                onPress={() =>
+                  handleCancelBooking(booking.id, booking.eventTitle)
+                }
                 variant="ghost"
                 size="sm"
                 disabled={cancellingBookingId === booking.id}
@@ -174,7 +283,7 @@ const BookingsScreen: React.FC = () => {
           </View>
         </View>
       </TouchableOpacity>
-    </Card>
+    </View>
   );
 
   const EmptyState = ({ type }: { type: "upcoming" | "past" }) => (

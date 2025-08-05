@@ -9,7 +9,9 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -28,8 +30,8 @@ interface CreateEventFormData {
   title: string;
   description: string;
   category: EventCategory;
-  date: string;
-  time: string;
+  date: Date | null;
+  time: Date | null;
   venue: {
     name: string;
     address: string;
@@ -57,12 +59,14 @@ const CreateEventScreen: React.FC = () => {
   const { user } = useAuth();
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [formData, setFormData] = useState<CreateEventFormData>({
     title: '',
     description: '',
     category: 'Music',
-    date: '',
-    time: '',
+    date: null,
+    time: null,
     venue: {
       name: '',
       address: '',
@@ -85,7 +89,7 @@ const CreateEventScreen: React.FC = () => {
       setFormData(prev => ({
         ...prev,
         [parent]: {
-          ...prev[parent as keyof CreateEventFormData],
+          ...(prev[parent as keyof CreateEventFormData] as any),
           [child]: value,
         },
       }));
@@ -99,7 +103,7 @@ const CreateEventScreen: React.FC = () => {
       case 1:
         return formData.title.trim() !== '' && formData.description.trim() !== '';
       case 2:
-        return formData.date !== '' && formData.time !== '';
+        return formData.date !== null && formData.time !== null;
       case 3:
         return formData.venue.name.trim() !== '' && 
                formData.venue.address.trim() !== '' &&
@@ -134,8 +138,8 @@ const CreateEventScreen: React.FC = () => {
         title: formData.title,
         description: formData.description,
         category: formData.category,
-        date: formData.date,
-        time: formData.time,
+        date: formData.date ? formData.date.toISOString().split('T')[0] : '',
+        time: formData.time ? formData.time.toTimeString().split(' ')[0].substring(0, 5) : '',
         venue: formData.venue,
         capacity: Number(formData.capacity),
         price: formData.isFree ? 0 : Number(formData.price),
@@ -210,25 +214,88 @@ const CreateEventScreen: React.FC = () => {
     </View>
   );
 
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-IN', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const formatTime = (time: Date) => {
+    return time.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      updateFormData('date', selectedDate);
+    }
+  };
+
+  const onTimeChange = (event: any, selectedTime?: Date) => {
+    setShowTimePicker(false);
+    if (selectedTime) {
+      updateFormData('time', selectedTime);
+    }
+  };
+
   const renderStep2 = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Date & Time</Text>
       
       <Text style={styles.label}>Event Date *</Text>
-      <TextInput
-        style={styles.input}
-        value={formData.date}
-        onChangeText={(value) => updateFormData('date', value)}
-        placeholder="YYYY-MM-DD"
-      />
+      <TouchableOpacity
+        style={[styles.dateTimeButton, !formData.date && styles.dateTimeButtonEmpty]}
+        onPress={() => setShowDatePicker(true)}
+      >
+        <View style={styles.dateTimeButtonContent}>
+          <Ionicons 
+            name="calendar-outline" 
+            size={20} 
+            color={formData.date ? '#0ea5e9' : '#9ca3af'} 
+          />
+          <Text style={[styles.dateTimeButtonText, !formData.date && styles.dateTimeButtonTextEmpty]}>
+            {formData.date ? formatDate(formData.date) : 'Select event date'}
+          </Text>
+        </View>
+        <Ionicons name="chevron-down" size={20} color="#9ca3af" />
+      </TouchableOpacity>
 
       <Text style={styles.label}>Event Time *</Text>
-      <TextInput
-        style={styles.input}
-        value={formData.time}
-        onChangeText={(value) => updateFormData('time', value)}
-        placeholder="HH:MM (24-hour format)"
-      />
+      <TouchableOpacity
+        style={[styles.dateTimeButton, !formData.time && styles.dateTimeButtonEmpty]}
+        onPress={() => setShowTimePicker(true)}
+      >
+        <View style={styles.dateTimeButtonContent}>
+          <Ionicons 
+            name="time-outline" 
+            size={20} 
+            color={formData.time ? '#0ea5e9' : '#9ca3af'} 
+          />
+          <Text style={[styles.dateTimeButtonText, !formData.time && styles.dateTimeButtonTextEmpty]}>
+            {formData.time ? formatTime(formData.time) : 'Select event time'}
+          </Text>
+        </View>
+        <Ionicons name="chevron-down" size={20} color="#9ca3af" />
+      </TouchableOpacity>
+
+      {formData.date && formData.time && (
+        <View style={styles.dateTimeSummary}>
+          <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+          <View style={styles.dateTimeSummaryContent}>
+            <Text style={styles.dateTimeSummaryTitle}>Event Scheduled</Text>
+            <Text style={styles.dateTimeSummaryText}>
+              {formatDate(formData.date)} at {formatTime(formData.time)}
+            </Text>
+          </View>
+        </View>
+      )}
 
       <Text style={styles.label}>Event Type</Text>
       <View style={styles.radioContainer}>
@@ -247,6 +314,27 @@ const CreateEventScreen: React.FC = () => {
           <Text style={styles.radioText}>Online Event</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Date Picker Modal */}
+      {showDatePicker && (
+        <DateTimePicker
+          value={formData.date || new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={onDateChange}
+          minimumDate={new Date()}
+        />
+      )}
+
+      {/* Time Picker Modal */}
+      {showTimePicker && (
+        <DateTimePicker
+          value={formData.time || new Date()}
+          mode="time"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={onTimeChange}
+        />
+      )}
     </View>
   );
 
@@ -589,6 +677,65 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  dateTimeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    marginBottom: 4,
+  },
+  dateTimeButtonEmpty: {
+    borderColor: '#e5e7eb',
+  },
+  dateTimeButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  dateTimeButtonText: {
+    fontSize: 16,
+    color: '#374151',
+    marginLeft: 12,
+    flex: 1,
+  },
+  dateTimeButtonTextEmpty: {
+    color: '#9ca3af',
+  },
+  dateTimeSummary: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#f0fdf4',
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  dateTimeSummaryContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  dateTimeSummaryTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#15803d',
+    marginBottom: 2,
+  },
+  dateTimeSummaryText: {
+    fontSize: 14,
+    color: '#166534',
+    lineHeight: 18,
   },
 });
 

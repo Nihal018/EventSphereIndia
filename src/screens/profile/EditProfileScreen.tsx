@@ -16,10 +16,10 @@ import Header from "../../components/common/Header";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import { useAuth } from "../../contexts/AuthContext";
-import { ProfileStackParamList } from "../../types";
+import { MainStackParamList } from "../../types";
 
 type EditProfileScreenNavigationProp = NativeStackNavigationProp<
-  ProfileStackParamList,
+  MainStackParamList,
   'EditProfile'
 >;
 
@@ -119,7 +119,13 @@ const EditProfileScreen: React.FC = () => {
   if (profileLoading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: "#fafafa" }}>
-        <Header title="Edit Profile" showBackButton />
+        <Header 
+          title="Edit Profile" 
+          showBackButton 
+          onLeftPress={() => {
+            navigation.goBack();
+          }} 
+        />
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <ActivityIndicator size="large" color="#0ea5e9" />
           <Text style={{ marginTop: 16, color: "#6b7280" }}>Loading profile...</Text>
@@ -131,7 +137,13 @@ const EditProfileScreen: React.FC = () => {
   if (profileError) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: "#fafafa" }}>
-        <Header title="Edit Profile" showBackButton />
+        <Header 
+          title="Edit Profile" 
+          showBackButton 
+          onLeftPress={() => {
+            navigation.goBack();
+          }} 
+        />
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
           <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
           <Text style={{ 
@@ -162,7 +174,13 @@ const EditProfileScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fafafa" }}>
-      <Header title="Edit Profile" showBackButton />
+      <Header 
+        title="Edit Profile" 
+        showBackButton 
+        onLeftPress={() => {
+          navigation.goBack();
+        }} 
+      />
       
       <ScrollView
         style={{ flex: 1 }}

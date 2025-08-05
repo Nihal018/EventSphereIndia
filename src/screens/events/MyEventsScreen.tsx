@@ -242,12 +242,11 @@ const MyEventsScreen: React.FC = () => {
     </View>
   );
 
-  if (crudLoading && !refreshing) {
-    return <LoadingSpinner text="Loading your events..." overlay />;
-  }
-
   return (
     <SafeAreaView style={styles.container}>
+      {crudLoading && !refreshing && (
+        <LoadingSpinner text="Loading your events..." overlay />
+      )}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#000" />
