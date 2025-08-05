@@ -72,7 +72,7 @@ const EventDetailsScreen: React.FC = () => {
 
   if (!event) {
     return (
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center items-center">
           <Text className="text-lg text-gray-500">Event not found</Text>
         </View>
@@ -81,7 +81,7 @@ const EventDetailsScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-background">
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header Image */}
         <View className="h-80 relative">
@@ -110,7 +110,7 @@ const EventDetailsScreen: React.FC = () => {
                 <View className="flex-row space-x-3">
                   <TouchableOpacity
                     onPress={() => event?.id && toggleLikeEvent(event.id)}
-                    className="bg-white/90 rounded-full p-2 shadow-sm"
+                    className="bg-background/90 rounded-full p-2 shadow-sm"
                   >
                     <Ionicons
                       name={
@@ -129,7 +129,7 @@ const EventDetailsScreen: React.FC = () => {
 
                   <TouchableOpacity
                     onPress={handleShare}
-                    className="bg-white/90 rounded-full p-2 shadow-sm"
+                    className="bg-background/90 rounded-full p-2 shadow-sm"
                   >
                     <Ionicons name="share-outline" size={24} color="#1f2937" />
                   </TouchableOpacity>
@@ -145,7 +145,7 @@ const EventDetailsScreen: React.FC = () => {
                         key={index}
                         onPress={() => setSelectedImage(index)}
                         className={`w-2 h-2 rounded-full ${
-                          selectedImage === index ? "bg-white" : "bg-white/50"
+                          selectedImage === index ? "bg-background" : "bg-background/50"
                         }`}
                       />
                     ))}
@@ -313,7 +313,7 @@ const EventDetailsScreen: React.FC = () => {
             </View>
           </Card>
         </View>
-        <View className="bg-white border-t border-gray-100 px-5 py-4">
+        <View className="bg-background border-t border-gray-100 px-5 py-4">
           <View className="flex-row items-center justify-between ml-4">
             <View>
               <Text className="text-gray-500 text-sm">Starting from</Text>

@@ -389,7 +389,7 @@ const HomeScreen: React.FC = () => {
       <SafeAreaView
         style={{
           flex: 1,
-          backgroundColor: "#fafafa",
+          backgroundColor: "#f8f9fa",
         }}
       >
         <FlatList // Main vertical FlatList for 'All Events'

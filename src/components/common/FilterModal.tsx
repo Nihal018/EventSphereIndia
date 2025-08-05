@@ -134,18 +134,18 @@ const FilterModal = memo<FilterModalProps>(
           </ScrollView>
 
           {/* Action Buttons */}
-          <View className="flex-row space-x-3 mt-4">
+          <View className="flex-row space-x-3 mx-4 ">
             <Button
               title="Clear All"
               onPress={handleClearAll} // Use local handler
               variant="outline"
-              style={{ flex: 1, marginRight: 8 }}
+              style={{ flex: 1, marginRight: 18 }}
             />
             <Button
               title="Apply"
               onPress={handleApply} // Use local handler
               gradient
-              style={{ flex: 1, marginLeft: 8 }}
+              style={{ flex: 1, marginLeft: 18 }}
             />
           </View>
         </View>

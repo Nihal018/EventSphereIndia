@@ -34,7 +34,7 @@ const AppNavigator: React.FC = () => {
         <LoadingSpinner
           text="Loading..."
           overlay
-          style={{ backgroundColor: "#ffffff" }}
+          style={{ backgroundColor: "#f8f9fa" }}
         />
       </ErrorBoundary>
     );

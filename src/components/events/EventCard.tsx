@@ -135,26 +135,39 @@ const EventCard = memo<EventCardProps>(
       const isFeatured = variant === "featured";
       const isDefault = variant === "default";
       
+      // For default variant (grid), use more compact text
+      const getCompactText = (text: string) => {
+        if (!isDefault) return text;
+        if (text === "Sold Out") return "Sold Out";
+        if (text === "Available") return "Available";
+        if (text.includes(" left")) {
+          const number = text.split(" ")[0];
+          return `${number} left`;
+        }
+        return text;
+      };
+      
       return (
         <View
           className={`rounded-full ${
-            isFeatured ? "px-3 py-1" : isDefault ? "px-1.5 py-0.5" : "px-2 py-1"
+            isFeatured ? "px-3 py-1" : isDefault ? "px-2 py-1" : "px-2 py-1"
           }`}
-          style={{ backgroundColor: `${availabilityColor}${isFeatured ? "20" : "15"}` }}
+          style={{ 
+            backgroundColor: `${availabilityColor}${isFeatured ? "20" : "18"}`,
+            minWidth: isDefault ? 50 : 'auto'
+          }}
         >
           <Text
-            className={`font-medium ${
+            className={`font-medium text-center ${
               isFeatured ? "text-xs text-white" : isDefault ? "text-xs" : "text-xs"
             }`}
             style={{
               color: isFeatured ? "white" : availabilityColor,
               fontSize: isDefault ? 10 : 12,
             }}
+            numberOfLines={1}
           >
-            {isDefault && availabilityText.includes(" left") 
-              ? availabilityText.replace(" left", "")
-              : availabilityText
-            }
+            {getCompactText(availabilityText)}
           </Text>
         </View>
       );
@@ -484,7 +497,7 @@ const EventCard = memo<EventCardProps>(
           </ImageBackground>
         </View>
 
-        <View className="p-3" style={{ minHeight: 120 }}>
+        <View className="p-3" style={{ minHeight: 130, paddingBottom: 12 }}>
           <Text
             className="text-gray-900 font-bold text-base leading-tight mb-2"
             numberOfLines={2}
@@ -507,11 +520,13 @@ const EventCard = memo<EventCardProps>(
             </Text>
           </View>
 
-          <View className="flex-row items-center justify-between mt-auto">
-            <View className="flex-1 mr-2">
+          <View className="flex-row items-end justify-between mt-auto">
+            <View className="flex-1 mr-1">
               <PriceDisplay />
             </View>
-            <AvailabilityBadge />
+            <View className="flex-shrink-0">
+              <AvailabilityBadge />
+            </View>
           </View>
         </View>
       </Pressable>

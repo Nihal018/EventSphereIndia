@@ -300,7 +300,7 @@ const MyEventsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f8f9fa',
   },
   header: {
     flexDirection: 'row',

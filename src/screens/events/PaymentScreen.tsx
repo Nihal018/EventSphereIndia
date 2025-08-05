@@ -121,7 +121,7 @@ const PaymentScreen: React.FC = () => {
   if (!booking || !event) {
     console.log("Booking information not found: ", booking);
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
         <Header title="Payment" showBack onLeftPress={handleBack} />
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
@@ -136,7 +136,7 @@ const PaymentScreen: React.FC = () => {
 
   if (processing) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
@@ -334,7 +334,7 @@ const PaymentScreen: React.FC = () => {
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: "white",
+          backgroundColor: "#f8f9fa",
           borderTopWidth: 1,
           borderTopColor: "#e5e7eb",
           paddingHorizontal: 20,

@@ -516,7 +516,7 @@ const CreateEventScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
   },
   header: {
     flexDirection: 'row',
@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
   },
   textArea: {
     height: 100,
@@ -585,7 +585,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#d1d5db',
     marginRight: 8,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
   },
   categoryButtonActive: {
     backgroundColor: '#0ea5e9',
@@ -687,7 +687,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
     marginBottom: 4,
   },
   dateTimeButtonEmpty: {
