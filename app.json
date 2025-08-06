@@ -8,7 +8,6 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yourname.eventsphereindia",
@@ -73,9 +72,6 @@
       "eas": {
         "projectId": "aa6e66e6-9123-4422-bdbd-8a4c1b5f3cfb"
       }
-    },
-    "updates": {
-      "url": "https://u.expo.dev/aa6e66e6-9123-4422-bdbd-8a4c1b5f3cfb"
     }
   }
 }
